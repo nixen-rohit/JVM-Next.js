@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { GoDotFill } from "react-icons/go";
@@ -19,6 +19,69 @@ interface HeroSliderProps {
 }
 
 const SLIDE_DURATION = 6000;
+
+
+// Add memo for slide content to prevent unnecessary re-renders
+const SlideContent = memo(({ slide, isActive }: { slide: Slide; isActive: boolean }) => {
+  if (!isActive) return null;
+  
+  const isFallback = isFallbackSlide(slide);
+  
+  return (
+    <>
+      {isFallback ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-black via-zinc-900 to-black">
+          <div className="text-center px-6 max-w-2xl">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white/90 mb-4">
+              {slide.heading}
+            </h1>
+            <p className="text-zinc-400 text-base sm:text-lg">
+              Check back soon for exciting new projects.
+            </p>
+          </div>
+        </div>
+      ) : slide.useImage && slide.imageUrl ? (
+        slide.imageUrl.startsWith("data:image") ? (
+          <div className="absolute inset-0 bg-linear-to-br from-zinc-900 via-black to-green-950">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={slide.imageUrl}
+              alt={slide.imageAlt}
+              role="img"
+              draggable={false}
+              className="absolute inset-0 w-full h-full object-cover object-center opacity-0 animate-fade-in"
+              loading="eager"
+              decoding="async"
+              onLoad={(e) => e.currentTarget.classList.remove("opacity-0")}
+              onError={(e) => {
+                console.warn("Failed to load Base64 image:", slide.id);
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          </div>
+        ) : (
+          <Image
+            src={slide.imageUrl}
+            alt={slide.imageAlt}
+            fill
+            priority={true}
+            className="object-cover object-center"
+            sizes="100vw"
+            draggable={false}
+          />
+        )
+      ) : (
+        <div className="absolute inset-0 bg-linear-to-br from-zinc-900 via-black to-green-950" />
+      )}
+      
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t from-black/80 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-1/3 bg-linear-to-b from-black/50 to-transparent" />
+    </>
+  );
+});
+
+SlideContent.displayName = 'SlideContent';
 
 export default function HeroSlider({ slides: propSlides }: HeroSliderProps) {
   const [slides, setSlides] = useState<Slide[]>(propSlides || []);

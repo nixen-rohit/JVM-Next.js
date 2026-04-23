@@ -1,3 +1,5 @@
+//app/(admin)/admin/hero-slides/[id]/page.tsx
+
 "use client";
 
 import { useState, useRef, ChangeEvent, useEffect, useCallback } from "react";
@@ -80,6 +82,24 @@ const createNewSlide = (): SlideConfig => {
   return normalizeSlide(base);
 };
 
+
+
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  
+  return debouncedValue;
+}
+
+
+
 export default function EditHeroSlide() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -94,6 +114,7 @@ export default function EditHeroSlide() {
   // 🔴 NEW: Delete confirmation modal state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const debouncedSlide = useDebounce(slide, 100);
 
   // 🔒 Store preview URL in ref for reliable cleanup (Fix #4)
   const previewUrlRef = useRef<string | null>(null);
@@ -102,6 +123,9 @@ export default function EditHeroSlide() {
   const isNewSlide = params.id === "new";
   const isFallback = slide ? isFallbackSlide(slide) : false;
 
+
+
+  
   useEffect(() => {
     if (!isNewSlide) {
       fetchSlide(params.id);
@@ -110,6 +134,8 @@ export default function EditHeroSlide() {
       setIsLoading(false);
     }
   }, [params.id, isNewSlide]);
+
+
 
   // 🔒 Cleanup object URLs on unmount (Fix #4 - improved)
   useEffect(() => {
@@ -374,7 +400,10 @@ export default function EditHeroSlide() {
   }, []);
 
   const handleSave = async () => {
-    if (!slide || isFallback) return;
+     if (isSaving || !slide || isFallback) {
+      console.log('Save prevented:', { isSaving, hasSlide: !!slide, isFallback });
+      return;
+    }
 
     setIsSaving(true);
     setSaveError(null);
@@ -393,6 +422,17 @@ export default function EditHeroSlide() {
         imagePayload = await compressAndConvertToBase64(slide.imageFile);
       }
       const normalized = normalizeSlide(slide);
+
+
+      for (const btn of normalized.buttons) {
+        if (!btn.link || (!btn.link.startsWith('/') && !btn.link.startsWith('http') && btn.link !== '#')) {
+          throw new Error(`Invalid button link: ${btn.link}`);
+        }
+        if (!btn.text || btn.text.trim().length === 0) {
+          throw new Error('Button text cannot be empty');
+        }
+      }
+      
 
       const payload = {
         id: normalized.id,
