@@ -169,7 +169,8 @@ export async function GET(
         id: project.id,
         name: project.name,
         slug: project.slug,
-        status: project.status,
+      
+        status: project.status, // ✅ 'upcoming', 'ongoing', 'sold'
         is_published: project.is_published,
         created_at: project.created_at,
         updated_at: project.updated_at,

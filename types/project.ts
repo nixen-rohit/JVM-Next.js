@@ -42,6 +42,7 @@ export interface Project {
   name: string;
   slug: string;
   status: ProjectStatus;
+  
   is_published: boolean;
   created_at: string; // ISO date string
   updated_at: string; // ISO date string

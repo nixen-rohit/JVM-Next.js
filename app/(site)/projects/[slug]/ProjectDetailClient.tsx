@@ -2,10 +2,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
 import { ProjectDetailResponse } from "@/types/project";
 
 // Import section components
+import { ComingSoon } from "@/components/ComingSoon";
 import { Hero } from "@/components/project/Hero";
 import { InfoSection } from "@/components/project/InfoSection";
 import { Stats } from "@/components/project/Stats";
@@ -25,6 +25,11 @@ export function ProjectDetailClient({
   const [activeMedia, setActiveMedia] = useState<string | null>(null);
   const [activeMap, setActiveMap] = useState<"paper" | "google" | null>(null);
   const { config, files, downloads, project } = initialData;
+
+
+  // ✅ Check if project is upcoming
+  const isUpcoming = project.status === 'upcoming';
+
 
   // Handle ESC key for modals
   useEffect(() => {
@@ -60,6 +65,20 @@ export function ProjectDetailClient({
     document.body.removeChild(link);
   };
 
+
+   // ✅ Show Coming Soon page for upcoming projects
+  if (isUpcoming) {
+    return (
+      <ComingSoon
+        projectName={project.name}
+        estimatedLaunch={config.info?.firstDescription || "Coming soon"}
+        description="We're working hard to bring you something amazing. Stay tuned for updates!"
+      />
+    );
+  }
+
+  
+ // ✅ Regular project view for ongoing/sold projects
   return (
     <div className="bg-white text-gray-900 min-h-screen">
       {/* Conditionally render sections based on config */}

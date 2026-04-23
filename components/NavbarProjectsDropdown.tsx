@@ -151,6 +151,7 @@ export default function NavbarProjectsDropdown({
         >
           <Link
             href={`/projects/${project.slug}`}
+            prefetch={true}  // ✅ Prefetch on hover
             className={`flex items-center ${
               isMobile ? "space-x-3 py-2.5 px-3 text-sm" : "space-x-3 px-4 py-3"
             } hover:bg-amber-50 transition-colors ${
