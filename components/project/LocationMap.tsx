@@ -148,20 +148,20 @@ export function LocationMap({
         {/* Show message if only one map is available */}
         {paperMap && !googleMapUrl && (
           <div className="text-center text-gray-500 text-sm mt-4 p-4 bg-gray-50 rounded-lg">
-            <p>📍 Paper map available. Add Google Maps embed URL in admin panel to enable interactive map.</p>
+            <p> Paper map available. Google map will be available soon.</p>
           </div>
         )}
         
         {!paperMap && googleMapUrl && (
           <div className="text-center text-gray-500 text-sm mt-4 p-4 bg-gray-50 rounded-lg">
-            <p>🗺️ Interactive map available. Upload a paper map image in admin panel to add static map view.</p>
+            <p>Interactive Google map available. Paper map will be available soon.</p>
           </div>
         )}
 
         {/* Show both are available */}
         {paperMap && googleMapUrl && (
           <div className="text-center text-gray-400 text-xs mt-4">
-            <p>📍 Click paper map to enlarge | 🗺️ Interactive map with full-screen option</p>
+            <p>Click paper map to enlarge | Interactive map with full-screen option</p>
           </div>
         )}
       </div>

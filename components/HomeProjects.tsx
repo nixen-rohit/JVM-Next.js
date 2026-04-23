@@ -11,21 +11,21 @@ const properties = [
     title: "Harit Homes",
     description:
       "A perfect combination of premium features, Harit Homes Plots truly make a 'Great place to live' a stunning reality. Project Cost: Rs. 826,500,000.",
-    image: "/project1.jpg",
+    image: "/harit-homes.jpg",
   },
   {
     id: "green-view-farm",
     title: "Green View Farm",
     description:
       "An eco-friendly planned society, Green View Farms features beautiful, lush green environments across 100 acres of area. Project Cost: Rs. 150 Crore.",
-    image: "/project2.jpg",
+    image: "/view-farm.jpeg",
   },
   {
     id: "lakshya-group",
     title: "Lakshya Group",
     description:
       "Evolving into one of India's fastest-growing real estate development companies, Lakshya delivers modern excellence. Project Cost: Rs. 655,440,000.",
-    image: "/project3.jpg",
+    image: "/project3.jpeg",
   },
 ];
 
