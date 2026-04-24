@@ -32,7 +32,7 @@ const properties = [
     title: "Star x city Bhiwadi",
     description:
       "A perfect combination of premium features, Harit Homes Plots truly make a 'Great place to live' a stunning reality. Project Cost: Rs. 826,500,000.",
-    image: "/bhiwadi.jpg",
+    image: "/harit-homes.jpg",
      
   },
 ];
