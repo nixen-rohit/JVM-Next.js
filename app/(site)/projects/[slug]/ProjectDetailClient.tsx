@@ -87,6 +87,7 @@ export function ProjectDetailClient({
           title={config.hero?.title || project.name}
           subtitle={config.hero?.subtitle}
           imageSrc={files.hero[0].src}
+          status={project.status} // ✅ Pass the status
         />
       )}
       {config.sections.info && (
