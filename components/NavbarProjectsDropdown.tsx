@@ -2,11 +2,10 @@
 
 "use client";
 
-import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { FiMapPin } from "react-icons/fi";
 import { motion } from "framer-motion";
-import { getCachedProjects, setCachedProjects, markProjectsChanged } from "@/lib/navbarCache";
+import { useNavbarProjects } from "@/hooks/useProjects";
 
 interface NavbarProjectsDropdownProps {
   isOpen: boolean;
@@ -19,97 +18,14 @@ export default function NavbarProjectsDropdown({
   onClose,
   isMobile = false,
 }: NavbarProjectsDropdownProps) {
-  const [projects, setProjects] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const isMounted = useRef(true);
-  const isFetching = useRef(false);
-
-  async function fetchProjects() {
-    // Prevent multiple simultaneous fetches
-    if (isFetching.current) return;
-    
-    isFetching.current = true;
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const res = await fetch("/api/projects/navbar", {
-        cache: 'no-store',
-      });
-      
-      if (!res.ok) {
-        throw new Error(`Failed to fetch: ${res.status}`);
-      }
-      
-      const data = await res.json();
-      
-      // Update cache
-      setCachedProjects(data);
-      
-      if (isMounted.current) {
-        setProjects(data);
-      }
-    } catch (err) {
-      console.error("Failed to fetch projects:", err);
-      if (isMounted.current) {
-        setError(err instanceof Error ? err.message : "Failed to load projects");
-      }
-    } finally {
-      if (isMounted.current) {
-        setLoading(false);
-      }
-      isFetching.current = false;
-    }
-  }
-
-  // Listen for project changes
-  useEffect(() => {
-    const handleProjectsChanged = () => {
-      console.log("🔄 Projects changed, clearing cache");
-      // Clear current projects to force refresh on next hover
-      if (isMounted.current) {
-        setProjects([]);
-      }
-    };
-
-    window.addEventListener('projectsChanged', handleProjectsChanged);
-    
-    return () => {
-      window.removeEventListener('projectsChanged', handleProjectsChanged);
-    };
-  }, []);
-
-  // Load data when dropdown opens
-  useEffect(() => {
-    if (!isOpen) return;
-    
-    // Try to get from cache first
-    const cached = getCachedProjects();
-    
-    if (cached && cached.length > 0) {
-      console.log("📦 Using cached projects data");
-      setProjects(cached);
-      setLoading(false);
-    } else {
-       
-      fetchProjects();
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
+  // ✅ Use SWR for automatic caching
+  const { projects, isLoading, error } = useNavbarProjects();
 
   const handleClick = () => onClose();
 
   if (!isOpen) return null;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className={`${isMobile ? "pl-4 space-y-1" : "py-2"} px-4`}>
         {[...Array(3)].map((_, i) => (
@@ -142,7 +58,7 @@ export default function NavbarProjectsDropdown({
 
   return (
     <>
-      {projects.map((project, index) => (
+      {projects.map((project: any, index: number) => (
         <motion.div
           key={project.slug}
           initial={isMobile ? false : { opacity: 0, x: -10 }}

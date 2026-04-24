@@ -1,17 +1,13 @@
 // app/(admin)/admin/projects/[id]/page.tsx
 
 "use client";
+import { invalidateProjectCache } from "@/lib/invalidateCache";
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Trash2 } from "lucide-react";
-import {
-  ProjectFormState,
-  SectionName,
-  ProjectFile,
-  ProjectConfig,
-} from "@/types/project";
+import {  ProjectFormState,  SectionName,} from "@/types/project";
 
 import { markProjectsChanged } from "@/lib/navbarCache";
 import { compressImage, getFileType } from "@/lib/imageCompression";
@@ -179,125 +175,119 @@ export default function AdminProjectEditPage() {
   );
 
   // ── Save ───────────────────────────────────────────────────────────────────
-const handleSave = async () => {
-  if (!form) return;
-  setSaving(true);
-  setSaveError(null);
+  const handleSave = async () => {
+    if (!form) return;
+    setSaving(true);
+    setSaveError(null);
 
-  try {
-    const formData = new FormData();
+    try {
+      const formData = new FormData();
 
-    // ✅ Convert is_published from boolean to number 0/1 if needed, or keep as boolean
-       const projectData = {
-      ...form.project,
-      is_published: form.project.is_published ? 1 : 0, // Simple boolean check
-    };
-
-    formData.append("project", JSON.stringify(projectData));
-
-    // ✅ Clean up config - remove empty arrays and undefined values
-    const cleanConfig = JSON.parse(JSON.stringify(form.config));
-
-    // Remove empty stats array if no stats
-    if (cleanConfig.stats && cleanConfig.stats.length === 0) {
-      delete cleanConfig.stats;
-    }
-
-    // Ensure collage has default values if section is enabled
-    if (cleanConfig.sections?.collage && !cleanConfig.collage) {
-      cleanConfig.collage = {
-        showMoreLimit: 6,
-        layoutPattern: "modulo-6",
+      // ✅ Convert is_published from boolean to number 0/1 if needed, or keep as boolean
+      const projectData = {
+        ...form.project,
+        is_published: form.project.is_published ? 1 : 0, // Simple boolean check
       };
-    }
 
-    formData.append("config", JSON.stringify(cleanConfig));
+      formData.append("project", JSON.stringify(projectData));
 
-    const fileMetadata: any[] = [];
-    Object.entries(form.files).forEach(([section, files]) => {
-      files.forEach((file, index) => {
-        formData.append("files", file);
-        fileMetadata.push({
-          section_name: section,
-          file_type: getFileType(file),
-          mime_type: file.type,
-          file_name: file.name,
-          alt_text: "",
-          sort_order: index,
+      // ✅ Clean up config - remove empty arrays and undefined values
+      const cleanConfig = JSON.parse(JSON.stringify(form.config));
+
+      // Remove empty stats array if no stats
+      if (cleanConfig.stats && cleanConfig.stats.length === 0) {
+        delete cleanConfig.stats;
+      }
+
+      // Ensure collage has default values if section is enabled
+      if (cleanConfig.sections?.collage && !cleanConfig.collage) {
+        cleanConfig.collage = {
+          showMoreLimit: 6,
+          layoutPattern: "modulo-6",
+        };
+      }
+
+      formData.append("config", JSON.stringify(cleanConfig));
+
+      const fileMetadata: any[] = [];
+      Object.entries(form.files).forEach(([section, files]) => {
+        files.forEach((file, index) => {
+          formData.append("files", file);
+          fileMetadata.push({
+            section_name: section,
+            file_type: getFileType(file),
+            mime_type: file.type,
+            file_name: file.name,
+            alt_text: "",
+            sort_order: index,
+          });
         });
       });
-    });
 
-    if (fileMetadata.length > 0) {
-      formData.append("fileMetadata", JSON.stringify(fileMetadata));
-    }
+      if (fileMetadata.length > 0) {
+        formData.append("fileMetadata", JSON.stringify(fileMetadata));
+      }
 
-    
-    // ✅ Handle brochure upload/deletion
-    const brochureData = form.downloads.brochure;
-    if (brochureData?.file) {
-      // New file uploaded
-      formData.append("brochureFile", brochureData.file);
-      formData.append("brochureTitle", brochureData.title || "");
-    } else if (brochureData?.existingFileId) {
-      // Keep existing file
-      formData.append("brochureKeep", "true");
-      formData.append("brochureTitle", brochureData.title || "");
-      formData.append("brochureExistingId", brochureData.existingFileId);
-    } else {
-      // No brochure - mark for deletion
-      formData.append("brochureDelete", "true");
-    }
+      // ✅ Handle brochure upload/deletion
+      const brochureData = form.downloads.brochure;
+      if (brochureData?.file) {
+        // New file uploaded
+        formData.append("brochureFile", brochureData.file);
+        formData.append("brochureTitle", brochureData.title || "");
+      } else if (brochureData?.existingFileId) {
+        // Keep existing file
+        formData.append("brochureKeep", "true");
+        formData.append("brochureTitle", brochureData.title || "");
+        formData.append("brochureExistingId", brochureData.existingFileId);
+      } else {
+        // No brochure - mark for deletion
+        formData.append("brochureDelete", "true");
+      }
 
-    // ✅ Handle document upload/deletion
-    const documentData = form.downloads.document;
-    if (documentData?.file) {
-      // New file uploaded
-      formData.append("documentFile", documentData.file);
-      formData.append("documentTitle", documentData.title || "");
-    } else if (documentData?.existingFileId) {
-      // Keep existing file
-      formData.append("documentKeep", "true");
-      formData.append("documentTitle", documentData.title || "");
-      formData.append("documentExistingId", documentData.existingFileId);
-    } else {
-      // No document - mark for deletion
-      formData.append("documentDelete", "true");
-    }
+      // ✅ Handle document upload/deletion
+      const documentData = form.downloads.document;
+      if (documentData?.file) {
+        // New file uploaded
+        formData.append("documentFile", documentData.file);
+        formData.append("documentTitle", documentData.title || "");
+      } else if (documentData?.existingFileId) {
+        // Keep existing file
+        formData.append("documentKeep", "true");
+        formData.append("documentTitle", documentData.title || "");
+        formData.append("documentExistingId", documentData.existingFileId);
+      } else {
+        // No document - mark for deletion
+        formData.append("documentDelete", "true");
+      }
 
-    const res = await fetch(`/api/projects/${projectId}`, {
-      method: "PUT",
-      body: formData,
-      credentials: "include",
-    });
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: "PUT",
+        body: formData,
+        credentials: "include",
+      });
 
-    if (!res.ok) {
-      const error = await res.json();
-      console.error("❌ Save error response:", error);
-      throw new Error(error.error || error.message || "Save failed");
-    }
+      if (res.ok) {
+        invalidateProjectCache(); // ✅ Invalidate cache
+        router.refresh();
+      }
 
-
-    // ✅ Invalidate navbar cache when project is updated
+      // ✅ Invalidate navbar cache when project is updated
       markProjectsChanged();
 
-    // ✅ Option 1: Stay on current page and refresh data
-    router.refresh();
-    
-    
-    
-    // ✅ Option 3: Redirect to projects list after 1 second
-    setTimeout(() => {
-      router.push("/admin/projects");
-    }, 1000);
-    
-  } catch (err) {
-    console.error(err);
-    setSaveError(err instanceof Error ? err.message : "Save failed");
-  } finally {
-    setSaving(false);
-  }
-};
+      // ✅ Option 1: Stay on current page and refresh data
+      router.refresh();
+
+      // ✅ Option 3: Redirect to projects list after 1 second
+      setTimeout(() => {
+        router.push("/admin/projects");
+      }, 1000);
+    } catch (err) {
+      console.error(err);
+      setSaveError(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
   // ── Delete ─────────────────────────────────────────────────────────────────
 
   const confirmDelete = async () => {
@@ -332,14 +322,13 @@ const handleSave = async () => {
         ok: res.ok,
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || `Delete failed (HTTP ${res.status})`);
+      if (res.ok) {
+        invalidateProjectCache(); // ✅ Invalidate cache
+        router.refresh();
       }
 
-        // ✅ Invalidate navbar cache when project is deleted
+      // ✅ Invalidate navbar cache when project is deleted
       markProjectsChanged();
-
 
       setTimeout(() => {
         router.push("/admin/projects");

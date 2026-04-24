@@ -17,15 +17,16 @@ function getBaseUrl() {
 // ✅ Generate static paths at build time
 export async function generateStaticParams() {
   try {
-    const baseUrl = getBaseUrl();
+    // Fetch only slugs for static generation
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || '';
     const res = await fetch(`${baseUrl}/api/projects/slugs`, {
       next: { revalidate: 3600 },
     });
-
+    
     if (!res.ok) return [];
     const projects = await res.json();
     
-    // Return only published projects for static generation
+    // Return only slugs for static generation
     return projects.map((p: { slug: string }) => ({
       slug: p.slug,
     }));
