@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
 import { motion, Variants, AnimatePresence } from "framer-motion";
 import { FiArrowRight } from "react-icons/fi";
-
+import React, { useState, useRef } from "react";
 // --- Types ---
 interface VerticalCard {
   id: number;
@@ -22,7 +21,7 @@ const verticals: VerticalCard[] = [
     title: "Expressway Safety Upgrades",
     description:
       "Upgrading Yamuna Expressway with modern LED lights and secure crash barriers.",
-    image: "/news1.jpg",
+    image: "/king.jpeg",
     color: "from-gray-900 to-transparent",
   },
   {
@@ -40,7 +39,7 @@ const verticals: VerticalCard[] = [
     title: "Strategic CRPF Base Campus",
     description:
       "Allocating 30 prime acres along the Yamuna Expressway for a new CRPF base.",
-    image: "/news3.jpg",
+    image: "/video/news-video.mp4",
     color: "from-blue-900 to-transparent",
   },
   {
@@ -49,7 +48,7 @@ const verticals: VerticalCard[] = [
     title: "Successful Land Acquisition",
     description:
       "Over 118 property owners have officially agreed to support the airport growth.",
-    image: "/news4.jpg",
+    image: "/video/lands.mp4",
     color: "from-gray-900 to-transparent",
   },
   {
@@ -113,6 +112,7 @@ export default function News() {
       {/* Cards Container */}
       <div className="flex flex-col md:flex-row w-full min-h-[75vh] md:h-[85vh] px-6 md:px-10 pb-12 gap-3 md:gap-0">
         {verticals.map((card) => {
+          const videoRef = useRef<HTMLVideoElement | null>(null);
           const isActive = activeId === card.id;
 
           return (
@@ -122,25 +122,50 @@ export default function News() {
               className={`relative overflow-hidden cursor-pointer group rounded-2xl md:rounded-none transition-all duration-300 ease-in-out
                 ${
                   isActive
-                    ? "h-95 md:h-full md:flex-[3_3_0%]"
-                    : "h-25 md:h-full md:flex-[1_1_0%]"
+                    ? "h-[380px] md:h-full md:flex-[3_3_0%]"
+                    : "h-[100px] md:h-full md:flex-[1_1_0%]"
                 }
               `}
-              onMouseEnter={() => setActiveId(card.id)}
+              onMouseEnter={() => {
+                setActiveId(card.id);
+                setTimeout(() => {
+                  videoRef.current?.play();
+                }, 50);
+              }}
+              onMouseLeave={() => {
+                if (card.image.endsWith(".mp4") && videoRef.current) {
+                  videoRef.current.pause();
+                  videoRef.current.currentTime = 0; // optional: restart on next hover
+                }
+              }}
               onClick={() => setActiveId(isActive ? null : card.id)}
               transition={{ type: "spring", stiffness: 200, damping: 25 }}
             >
-              {/* Background Image */}
-              <div
-                className={`absolute inset-0 w-full h-full bg-cover bg-center transition-all duration-700 ease-in-out
-                  ${isActive ? "grayscale-0 scale-105" : "grayscale scale-100"}
-                `}
-                style={{ backgroundImage: `url(${card.image})` }}
-              />
+              {/* Background Image + video*/}
+              {card.image.endsWith(".mp4") ? (
+                <video
+                  src={card.image}
+                  loop
+                  muted
+                  playsInline
+                  ref={videoRef}
+                  preload="metadata"
+                  className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-in-out
+      ${isActive ? "scale-105" : "scale-100"}
+    `}
+                />
+              ) : (
+                <div
+                  className={`absolute inset-0 w-full h-full bg-cover bg-center transition-all duration-700 ease-in-out
+      ${isActive ? "grayscale-0 scale-105" : "grayscale scale-100"}
+    `}
+                  style={{ backgroundImage: `url(${card.image})` }}
+                />
+              )}
 
               {/* Overlay Gradient */}
               <div
-                className={`absolute inset-0 bg-linear-to-t ${card.color} opacity-80 md:opacity-60 md:group-hover:opacity-40 transition-opacity duration-500`}
+                className={`absolute inset-0 bg-gradient-to-t ${card.color} opacity-80 md:opacity-60 md:group-hover:opacity-40 transition-opacity duration-500`}
               />
 
               {/* Content Container */}

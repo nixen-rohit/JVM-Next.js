@@ -93,7 +93,7 @@ export default function NavbarProjectsDropdown({
       setProjects(cached);
       setLoading(false);
     } else {
-      console.log("🌐 Cache miss or expired, fetching fresh data");
+       
       fetchProjects();
     }
   }, [isOpen]);

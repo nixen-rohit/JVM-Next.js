@@ -3,29 +3,37 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence, useInView } from "framer-motion";
+import Link from "next/link";
+
+
 
 // 1. Define the Property Data
 const properties = [
+ 
   {
-    id: "harit-homes",
-    title: "Harit Homes",
+    id: "shyam-vihar-2",
+    title: "Shyam Vihar 2 Aloda Palsana Road",
     description:
       "A perfect combination of premium features, Harit Homes Plots truly make a 'Great place to live' a stunning reality. Project Cost: Rs. 826,500,000.",
-    image: "/harit-homes.jpg",
+    image: "/shyam-vihar-aloda.jpeg",
+    
+  },
+  
+  {
+    id: "shyam-vihar-project",
+    title: "Shyam Vihar Samota Ka Bass",
+    description:
+      "A perfect combination of premium features, Harit Homes Plots truly make a 'Great place to live' a stunning reality. Project Cost: Rs. 826,500,000.",
+    image: "/SamotaKaBass.jpg",
+    
   },
   {
-    id: "green-view-farm",
-    title: "Green View Farm",
+    id: "star-x-city-bhiwadi",
+    title: "Star x city Bhiwadi",
     description:
-      "An eco-friendly planned society, Green View Farms features beautiful, lush green environments across 100 acres of area. Project Cost: Rs. 150 Crore.",
-    image: "/view-farm.jpeg",
-  },
-  {
-    id: "lakshya-group",
-    title: "Lakshya Group",
-    description:
-      "Evolving into one of India's fastest-growing real estate development companies, Lakshya delivers modern excellence. Project Cost: Rs. 655,440,000.",
-    image: "/project3.jpeg",
+      "A perfect combination of premium features, Harit Homes Plots truly make a 'Great place to live' a stunning reality. Project Cost: Rs. 826,500,000.",
+    image: "/bhiwadi.jpg",
+     
   },
 ];
 
@@ -100,9 +108,9 @@ export default function HomeProjects() {
         {/* Right Side: Accordion on Mobile / Sticky Text on Desktop */}
         <div className="w-full md:w-1/2 relative">
           <div className="md:sticky md:top-0 md:h-screen flex flex-col justify-center pl-0 md:pl-20 md:py-20">
-            <p className="text-xl md:text-3xl font-serif font-bold text-black tracking-widest uppercase mb-10 md:mb-12">
+            <h1 className="text-xl md:text-3xl font-serif font-bold text-black tracking-widest text-center md:text-left uppercase mb-10 md:mb-12">
               Our Projects
-            </p>
+            </h1>
 
             <div className="flex flex-col gap-8 md:gap-6">
               {properties.map((property, index) => {
@@ -137,9 +145,12 @@ export default function HomeProjects() {
                           <p className="text-gray-600 leading-relaxed max-w-md">
                             {property.description}
                           </p>
-                          <button className="mt-6 text-sm font-medium border-b border-gray-400 pb-1 hover:border-gray-800 transition-colors inline-block mb-2">
+                          <Link
+                            href={`/projects/${property.id}`}
+                            className="mt-6 text-sm font-medium border-b border-gray-400 pb-1 hover:border-gray-800 transition-colors inline-block mb-2"
+                          >
                             Learn More
-                          </button>
+                          </Link>
 
                           {/* MOBILE IMAGE: Shown only on mobile devices inside the accordion */}
                           <div className="md:hidden relative w-full aspect-4/3 mt-6 bg-gray-100 overflow-hidden">

@@ -136,7 +136,7 @@ export default function About() {
   ];
 
   return (
-    <section className="min-h-[50vh] py-24 px-4 sm:px-6 lg:px-8">
+    <section className="min-h-[50vh] py-24 px-4 sm:px-6 lg:px-8 bg-white">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div

@@ -8,7 +8,7 @@ import HeroSlider from "@/components/HeroSlider";
 
 export default function Home() {
   return (
-    <main className="h-screen bg-white">
+   <main className="min-h-screen bg-white">
       <HeroSlider  />
       <News />
       <About />
