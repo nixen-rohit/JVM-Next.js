@@ -9,7 +9,7 @@ import HeroSlider from "@/components/HeroSlider";
 export default function Home() {
   return (
     <main className="h-screen bg-white">
-      <HeroSlider />
+      <HeroSlider  />
       <News />
       <About />
        <HomeProjects /> 

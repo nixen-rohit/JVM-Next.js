@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { GoDotFill } from "react-icons/go";
 import Loader from "./Loader";
 import type { Slide } from "@/types/slides";
+
 import {
   FALLBACK_SLIDE,
   isFallbackSlide,

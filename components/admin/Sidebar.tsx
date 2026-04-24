@@ -47,10 +47,10 @@ export default function Sidebar() {
       } bg-black border-r border-gray-800 text-white min-h-screen flex flex-col transition-all duration-300 ease-in-out`}
     >
       {/* Logo & Toggle */}
-      <div className="p-5 flex items-center justify-between border-b border-gray-800">
+      <div className="px-5 py-4 flex items-center justify-between border-b border-gray-800">
         {!collapsed && (
           <h1 className="text-xl font-bold bg-linear-to-r text-green-700 bg-clip-text  ">
-            EstateAdmin
+            JVM
           </h1>
         )}
         <button
