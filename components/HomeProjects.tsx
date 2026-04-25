@@ -5,27 +5,22 @@ import Image from "next/image";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import Link from "next/link";
 
-
-
 // 1. Define the Property Data
 const properties = [
- 
-  {
-    id: "shyam-vihar-2",
-    title: "Shyam Vihar 2 Aloda Palsana Road",
-    description:
-      "A perfect combination of premium features, Harit Homes Plots truly make a 'Great place to live' a stunning reality. Project Cost: Rs. 826,500,000.",
-    image: "/shyam-vihar-aloda.jpeg",
-    
-  },
-  
   {
     id: "shyam-vihar-project",
     title: "Shyam Vihar Samota Ka Bass",
     description:
       "A perfect combination of premium features, Harit Homes Plots truly make a 'Great place to live' a stunning reality. Project Cost: Rs. 826,500,000.",
-    image: "/SamotaKaBass.jpg",
-    
+    image: "/SamotaKaBass.jpeg",
+  },
+
+  {
+    id: "shyam-vihar-2",
+    title: "Shyam Vihar 2 Aloda Palsana Road",
+    description:
+      "A perfect combination of premium features, Harit Homes Plots truly make a 'Great place to live' a stunning reality. Project Cost: Rs. 826,500,000.",
+    image: "/shyamviharaloda.jpeg",
   },
   {
     id: "star-x-city-bhiwadi",
@@ -33,7 +28,6 @@ const properties = [
     description:
       "A perfect combination of premium features, Harit Homes Plots truly make a 'Great place to live' a stunning reality. Project Cost: Rs. 826,500,000.",
     image: "/harit-homes.jpg",
-     
   },
 ];
 
