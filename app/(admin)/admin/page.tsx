@@ -15,11 +15,7 @@ interface DashboardProps {
 // Function to fetch projects count
 async function getTotalProjects(): Promise<number> {
   try {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_BASE_URL ||
-      (process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : "http://localhost:3000");
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
     // ✅ Fix: Await cookies() and then get the cookie string
     const cookieStore = await cookies();
@@ -50,11 +46,7 @@ async function getTotalProjects(): Promise<number> {
 // Function of fetch contacts count
 async function getTotalContacts(): Promise<number> {
   try {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_BASE_URL ||
-      (process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : "http://localhost:3000");
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
     // ✅ Fix: Await cookies() and then get the cookie string
     const cookieStore = await cookies();
@@ -85,11 +77,7 @@ async function getTotalContacts(): Promise<number> {
 // Function of fetch slides count
 async function getTotalSlides(): Promise<number> {
   try {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_BASE_URL ||
-      (process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : "http://localhost:3000");
+     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
     const res = await fetch(`${baseUrl}/api/hero-slides?all=true`, {
       cache: "no-store",
@@ -160,7 +148,7 @@ export default async function AdminDashboardPage() {
         </div>
 
         <Link
-          href="/admin/projects/new"
+          href="/admin/projects"
           className="flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors shadow-lg shadow-green-900/30"
         >
           {/* Subtle button glare effect */}
