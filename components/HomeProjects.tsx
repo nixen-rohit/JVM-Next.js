@@ -11,7 +11,7 @@ const properties = [
     id: "shyam-vihar-project",
     title: "Shyam Vihar Samota Ka Bass",
     description:
-      "A perfect combination of premium features, Harit Homes Plots truly make a 'Great place to live' a stunning reality. Project Cost: Rs. 826,500,000.",
+      "A modern gated community designed for comfortable living with well-planned plots, wide blacktop roads, street lights, water facilities, and secure surroundings. Build your dream home in a premium and peaceful location.",
     image: "/SamotaKaBass.jpeg",
   },
 
@@ -19,14 +19,14 @@ const properties = [
     id: "shyam-vihar-2",
     title: "Shyam Vihar 2 Aloda Palsana Road",
     description:
-      "A perfect combination of premium features, Harit Homes Plots truly make a 'Great place to live' a stunning reality. Project Cost: Rs. 826,500,000.",
+      "Shyam Vihar 2 is a well-developed residential plotting project designed for comfortable living and smart investment. With organized plots, wide roads, street lighting, and essential amenities, it offers the ideal blend of convenience and community living.",
     image: "/shyamviharaloda.jpeg",
   },
   {
     id: "star-x-city-bhiwadi",
     title: "Star x city Bhiwadi",
     description:
-      "A perfect combination of premium features, Harit Homes Plots truly make a 'Great place to live' a stunning reality. Project Cost: Rs. 826,500,000.",
+      "Star X City is a well-planned residential township offering a perfect combination of comfort, infrastructure, and future growth. Designed for modern living, the project provides organized plots, quality development, and a vibrant community environment.",
     image: "/harit-homes.jpg",
   },
 ];
