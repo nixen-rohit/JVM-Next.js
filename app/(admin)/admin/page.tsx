@@ -115,6 +115,12 @@ export default async function AdminDashboardPage() {
 
   const stats = [
     {
+      title: "Hero Slides",
+      value: totalSlides.toString(),
+      icon: TbSlideshow,
+      link: "/admin/hero-slides",
+    },
+    {
       title: "Total Projects",
       value: totalProjects.toString(),
       icon: BsBuilding,
@@ -126,12 +132,7 @@ export default async function AdminDashboardPage() {
       icon: BsChatLeftText,
       link: "/admin/contacts",
     },
-    {
-      title: "Hero Slides",
-      value: totalSlides.toString(),
-      icon: TbSlideshow,
-      link: "/admin/hero-slides",
-    },
+    
   ];
 
   return (
