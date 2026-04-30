@@ -223,6 +223,7 @@ export async function GET(
   }
 }
 
+ 
 // ── PUT ───────────────────────────────────────────────────────────────────────
 export async function PUT(
   request: NextRequest,
@@ -352,29 +353,34 @@ export async function PUT(
         console.log("✅ Projects table updated");
       }
 
-      // 2. Handle single-file section uploads (hero, highlight, location)
+      // 2. Handle ALL file uploads and deletions
       const uploadedFiles = formData.getAll("files") as File[];
       const fileMetadata = formData.get("fileMetadata")
         ? JSON.parse(formData.get("fileMetadata") as string)
         : [];
 
-      // Track which single-file sections have new uploads
-      const sectionsWithNewUploads = new Set<string>();
+      // ✅ Get keepFileIds from frontend
+      const keepFileIdsRaw = formData.get("keepFileIds");
+      const keepFileIds: string[] = keepFileIdsRaw ? JSON.parse(keepFileIdsRaw as string) : [];
+      
+      console.log(`🗑️ Files to keep (${keepFileIds.length}):`, keepFileIds);
 
+      // Track which sections have new uploads
+      const sectionsWithNewUploads = new Set<string>();
       for (const meta of fileMetadata) {
-        if (["hero", "highlight", "location"].includes(meta.section_name)) {
-          sectionsWithNewUploads.add(meta.section_name);
-        }
+        sectionsWithNewUploads.add(meta.section_name);
       }
 
-      // Delete existing files for sections that are getting new uploads
+      // Delete existing files for single-file sections that are getting new uploads
       for (const section of sectionsWithNewUploads) {
-        console.log(`🗑️ Deleting existing ${section} files before new upload`);
-        await dbExecute(
-          `DELETE FROM project_files WHERE project_id = ? AND section_name = ?`,
-          [id, section],
-          connection,
-        );
+        if (["hero", "highlight", "location"].includes(section)) {
+          console.log(`🗑️ Deleting existing ${section} file before new upload`);
+          await dbExecute(
+            `DELETE FROM project_files WHERE project_id = ? AND section_name = ?`,
+            [id, section],
+            connection,
+          );
+        }
       }
 
       // Insert new files
@@ -408,7 +414,31 @@ export async function PUT(
         console.log(`✅ Uploaded ${meta.section_name} file: ${meta.file_name}`);
       }
 
-      // 3. Upsert project_configs
+      // ✅ CRITICAL: Delete files that are NOT in keepFileIds
+      // This handles deletions for media, units, collage, and any other multi-file sections
+      if (keepFileIds.length > 0) {
+        // Build query to delete files not in keep list
+        const placeholders = keepFileIds.map(() => '?').join(',');
+        const deleteQuery = `
+          DELETE FROM project_files 
+          WHERE project_id = ? 
+          AND section_name NOT IN ('hero', 'highlight', 'location')
+          AND id NOT IN (${placeholders})
+        `;
+        const [deleteResult] = await dbExecute(deleteQuery, [id, ...keepFileIds], connection);
+        console.log(`🗑️ Deleted ${(deleteResult as any).affectedRows} files not in keep list`);
+      } else if (keepFileIds.length === 0 && sectionsWithNewUploads.size === 0) {
+        // If no files to keep AND no new uploads, delete ALL multi-section files
+        const deleteQuery = `
+          DELETE FROM project_files 
+          WHERE project_id = ? 
+          AND section_name NOT IN ('hero', 'highlight', 'location')
+        `;
+        const [deleteResult] = await dbExecute(deleteQuery, [id], connection);
+        console.log(`🗑️ Deleted ${(deleteResult as any).affectedRows} files (no keep list)`);
+      }
+
+      // 3. Upsert project_configs (unchanged)
       if (config && Object.keys(config).length > 0) {
         const { sections, hero, info, stats, highlight, location, collage } = config;
 
@@ -539,9 +569,7 @@ export async function PUT(
         }
       }
 
-      // ✅ 4. Handle downloads - DELETE ALL then RE-CREATE (simpler approach)
-      
-      // First, delete ALL existing downloads for this project
+      // 4. Handle downloads - DELETE ALL then RE-CREATE
       console.log("🗑️ Deleting all existing downloads");
       await dbExecute(
         `DELETE pd, pf FROM project_downloads pd 
@@ -551,15 +579,12 @@ export async function PUT(
         connection,
       );
 
-      // Get brochure data from formData
       const brochureFile = formData.get("brochureFile") as File | null;
       const brochureTitle = formData.get("brochureTitle") as string | null;
 
-      // Get document data from formData
       const documentFile = formData.get("documentFile") as File | null;
       const documentTitle = formData.get("documentTitle") as string | null;
 
-      // Re-create brochure if present
       if (brochureFile && brochureTitle) {
         console.log("📄 Creating brochure...");
         const buffer = Buffer.from(await brochureFile.arrayBuffer());
@@ -582,7 +607,6 @@ export async function PUT(
         console.log("✅ Brochure created");
       }
 
-      // Re-create document if present
       if (documentFile && documentTitle) {
         console.log("📄 Creating document...");
         const buffer = Buffer.from(await documentFile.arrayBuffer());
@@ -604,8 +628,6 @@ export async function PUT(
         );
         console.log("✅ Document created");
       }
-
-      // If no brochure or document files were provided, downloads are effectively deleted (already handled above)
 
       await connection.commit();
       console.log("🎉 All changes committed successfully");
@@ -632,7 +654,6 @@ export async function PUT(
     );
   }
 }
-
 
 // ── DELETE ────────────────────────────────────────────────────────────────────
 export async function DELETE(
