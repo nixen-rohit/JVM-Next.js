@@ -1,7 +1,6 @@
-// app/api/hero-slides/handlers/PUT.ts - NEW FILE
+// app/api/hero-slides/handlers/PUT.ts
 import { NextRequest, NextResponse } from 'next/server';
 import getPool from '@/lib/db';
-import { serverCache, ACTIVE_SLIDES_CACHE_KEY, getSlideCacheKey } from '@/lib/cache';
 import { rowToSlide, SlideRow, base64ToBuffer } from '../helpers';
 import { isValidUUID } from '../validators';
 
@@ -141,9 +140,7 @@ export async function handlePUT(request: NextRequest) {
     
     await connection.commit();
     
-    // Invalidate caches
-    serverCache.invalidate(ACTIVE_SLIDES_CACHE_KEY);
-    serverCache.invalidate(getSlideCacheKey(id));
+     
     
     // Fetch updated slide
     const [rows] = await pool.query<SlideRow[]>(

@@ -29,7 +29,7 @@ export async function GET() {
     const [projects] = await dbQuery<RowDataPacket[]>(
       `SELECT id, name, slug 
        FROM projects 
-       WHERE is_published = 1 AND status = 'ongoing'
+       WHERE is_published = 1 
        ORDER BY name ASC
        LIMIT 15`  // Limit for performance
     );

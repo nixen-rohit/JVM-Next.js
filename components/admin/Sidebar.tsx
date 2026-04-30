@@ -1,3 +1,5 @@
+//components/admin/Sidebar.tsx
+
 "use client";
 
 import Link from "next/link";
@@ -96,16 +98,7 @@ export default function Sidebar() {
 
       {/* Bottom Actions */}
       <div className="p-3 border-t border-gray-800 space-y-3">
-        {/* Settings Link */}
-        <Link
-          href="/admin/settings"
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:bg-gray-800/50 hover:text-white transition-colors ${
-            collapsed ? "justify-center" : ""
-          }`}
-        >
-          <BsGear className="w-5 h-5 shrink-0" />
-          {!collapsed && <span className="font-medium">Settings</span>}
-        </Link>
+        
 
         {/* Logout Button - Original UI, Inline Logic */}
         <div className={`${collapsed ? "flex justify-center" : ""}`}>

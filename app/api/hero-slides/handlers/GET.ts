@@ -1,7 +1,6 @@
-// app/api/hero-slides/handlers/GET.ts - NEW FILE
+// app/api/hero-slides/handlers/GET.ts
 import { NextRequest, NextResponse } from 'next/server';
 import getPool from '@/lib/db';
-import { serverCache, ACTIVE_SLIDES_CACHE_KEY, getSlideCacheKey } from '@/lib/cache';
 import { rowToSlide, SlideRow } from '../helpers';
 import { isValidUUID } from '../validators';
 
@@ -17,12 +16,7 @@ export async function handleGET(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid slide ID format' }, { status: 400 });
       }
       
-      // Check cache first
-      const cacheKey = getSlideCacheKey(id);
-      const cachedSlide = serverCache.get(cacheKey);
-      if (cachedSlide) {
-        return NextResponse.json(cachedSlide);
-      }
+      
       
       const [rows] = await pool.query<SlideRow[]>(
         'SELECT * FROM slides WHERE id = ? LIMIT 1',
@@ -34,20 +28,14 @@ export async function handleGET(request: NextRequest) {
       }
       
       const slide = rowToSlide(rows[0]);
-      serverCache.set(cacheKey, slide, 60); // Cache for 60 seconds
+      // ❌ DELETE this line: serverCache.set(cacheKey, slide, 60);
       return NextResponse.json(slide);
     }
     
     // Get all slides (active first, then all for admin)
     const showAll = searchParams.get('all') === 'true';
     
-    if (!showAll) {
-      // Check cache for active slides
-      const cachedSlides = serverCache.get(ACTIVE_SLIDES_CACHE_KEY);
-      if (cachedSlides) {
-        return NextResponse.json(cachedSlides);
-      }
-    }
+   
     
     const query = showAll
       ? 'SELECT * FROM slides ORDER BY sort_order ASC, created_at ASC'
@@ -56,10 +44,7 @@ export async function handleGET(request: NextRequest) {
     const [rows] = await pool.query<SlideRow[]>(query);
     const slides = rows.map(rowToSlide);
     
-    // Cache active slides only
-    if (!showAll) {
-      serverCache.set(ACTIVE_SLIDES_CACHE_KEY, { slides, count: slides.length }, 60);
-    }
+   
     
     return NextResponse.json({ slides, count: slides.length });
   } catch (error: any) {

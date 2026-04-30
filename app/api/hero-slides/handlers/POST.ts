@@ -1,11 +1,10 @@
-// app/api/hero-slides/handlers/POST.ts - NEW FILE
+// app/api/hero-slides/handlers/POST.ts
 import { NextRequest, NextResponse } from 'next/server';
 import getPool from '@/lib/db';
-import { serverCache, ACTIVE_SLIDES_CACHE_KEY, getSlideCacheKey } from '@/lib/cache';
 import { rowToSlide, SlideRow, base64ToBuffer } from '../helpers';
 import { SlideSchema, isValidUUID } from '../validators';
 
-const MAX_IMAGE_SIZE_MB = 1; // 1MB limit
+const MAX_IMAGE_SIZE_MB = 1;
 
 export async function handlePOST(request: NextRequest) {
   let connection;
@@ -43,7 +42,6 @@ export async function handlePOST(request: NextRequest) {
     if (validatedData.useImage && validatedData.imageData) {
       const parsed = base64ToBuffer(validatedData.imageData);
       if (parsed) {
-        // Check image size (1MB limit)
         if (parsed.buffer.length > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
           return NextResponse.json(
             { error: `Image too large. Max ${MAX_IMAGE_SIZE_MB}MB.` },
@@ -93,9 +91,7 @@ export async function handlePOST(request: NextRequest) {
     
     await connection.commit();
     
-    // Invalidate caches
-    serverCache.invalidate(ACTIVE_SLIDES_CACHE_KEY);
-    serverCache.invalidate(getSlideCacheKey(validatedData.id));
+    
     
     // Fetch created slide
     const [rows] = await pool.query<SlideRow[]>(

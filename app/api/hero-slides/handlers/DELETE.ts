@@ -1,7 +1,6 @@
-// app/api/hero-slides/handlers/DELETE.ts - NEW FILE
+// app/api/hero-slides/handlers/DELETE.ts
 import { NextRequest, NextResponse } from 'next/server';
 import getPool from '@/lib/db';
-import { serverCache, ACTIVE_SLIDES_CACHE_KEY, getSlideCacheKey } from '@/lib/cache';
 import { rowToSlide, SlideRow, canDeleteSlide } from '../helpers';
 import { isValidUUID } from '../validators';
 
@@ -58,10 +57,6 @@ export async function handleDELETE(request: NextRequest) {
     }
     
     await connection.commit();
-    
-    // Invalidate caches
-    serverCache.invalidate(ACTIVE_SLIDES_CACHE_KEY);
-    serverCache.invalidate(getSlideCacheKey(id));
     
     return NextResponse.json({
       message: hardDelete ? 'Slide permanently deleted' : 'Slide deactivated'
