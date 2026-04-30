@@ -89,3 +89,14 @@ export function formatFileSize(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
+
+
+export function isPdfFile(file: File): boolean {
+  return file.type === 'application/pdf';
+}
+
+export function getFileType(file: File): 'image' | 'pdf' | 'other' {
+  if (isImageFile(file)) return 'image';
+  if (isPdfFile(file)) return 'pdf';
+  return 'other';
+}
