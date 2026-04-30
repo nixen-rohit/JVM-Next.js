@@ -97,10 +97,16 @@ export default function ContactsPage() {
           </p>
         </div>
 
-        <div className="w-full rounded-xl border border-green-900/40 bg-neutral-900 px-4 py-3 text-sm text-white shadow-lg shadow-green-900/10 sm:w-fit">
-          Total Requests:{" "}
-          <span className="font-semibold text-green-700">{totalContacts}</span>
-        </div>
+ 
+
+        <div className="hidden  sm:flex items-center px-4 py-3 rounded-2xl bg-[#0b0f0d] border border-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.08)]">
+              <p className="text-base font-bold text-white">
+                Total :{" "}
+                <span className="text-green-400 font-bold">
+                  {totalContacts}
+                </span>
+              </p>
+            </div>
       </div>
 
       {/* Empty State */}

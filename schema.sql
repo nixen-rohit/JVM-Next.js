@@ -24,12 +24,16 @@ CREATE TABLE IF NOT EXISTS users (
 
 
 -- schema.sql
+ 
+
+--hero Slides
 CREATE TABLE IF NOT EXISTS slides (
   id VARCHAR(36) PRIMARY KEY,
   
-  -- Image configuration
+  -- Image configuration (STORED AS BLOB, NOT Base64)
   use_image BOOLEAN DEFAULT TRUE,
-  image_url VARCHAR(500) NULL,
+  image_data LONGBLOB NULL COMMENT 'Raw binary image data',
+  image_mime_type VARCHAR(50) NULL COMMENT 'MIME type like image/jpeg, image/png, image/webp',
   image_alt VARCHAR(255) DEFAULT 'Hero slide background',
   
   -- Content configuration
@@ -41,17 +45,17 @@ CREATE TABLE IF NOT EXISTS slides (
   
   -- Button configuration
   show_buttons BOOLEAN DEFAULT TRUE,
-button_count TINYINT UNSIGNED DEFAULT 2 CHECK (button_count IN (1, 2)),
+  button_count TINYINT UNSIGNED DEFAULT 2 CHECK (button_count IN (1, 2)),
 
--- Button 1
-button1_text VARCHAR(100) NULL,
-button1_link VARCHAR(255) NULL,
-button1_variant ENUM('primary', 'secondary') DEFAULT 'primary',
+  -- Button 1
+  button1_text VARCHAR(100) NULL,
+  button1_link VARCHAR(255) NULL,
+  button1_variant ENUM('primary', 'secondary') DEFAULT 'primary',
 
--- Button 2
-button2_text VARCHAR(100) NULL,
-button2_link VARCHAR(255) NULL,
-button2_variant ENUM('primary', 'secondary') DEFAULT 'secondary',
+  -- Button 2
+  button2_text VARCHAR(100) NULL,
+  button2_link VARCHAR(255) NULL,
+  button2_variant ENUM('primary', 'secondary') DEFAULT 'secondary',
   
   -- Metadata
   is_active BOOLEAN DEFAULT TRUE,
@@ -59,8 +63,12 @@ button2_variant ENUM('primary', 'secondary') DEFAULT 'secondary',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   
-  INDEX idx_active_order (is_active, sort_order)
-)  
+  -- Indexes for performance
+  INDEX idx_active_order (is_active, sort_order),
+  INDEX idx_id_active (id, is_active),
+  INDEX idx_updated_at (updated_at)
+  
+)
 
 
  

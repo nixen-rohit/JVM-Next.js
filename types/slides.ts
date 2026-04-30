@@ -42,6 +42,7 @@ export interface SlideConfig extends Omit<Slide, "buttonCount"> {
    * Convert to base64 before sending to API
    */
   imageFile: File | null;
+  imageData?: string | null; // ← ADD THIS for API payload
   
   /** 
    * 🔹 CLIENT-ONLY: Preview URL (ObjectURL or base64)

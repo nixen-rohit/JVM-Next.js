@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { GoPlus, GoPencil, GoCheck, GoAlert, GoInfo } from "react-icons/go";
+import { GoStack, GoPulse } from "react-icons/go";
 import Image from "next/image";
 import type { Slide, ButtonConfig } from "@/types/slides";
 import {
@@ -96,13 +97,25 @@ export default function HeroSlidesList() {
   return (
     <div className="min-h-screen bg-black text-white font-sans">
       {/* Header */}
+      {/* Header */}
       <header className="border-b border-green-700/50 bg-black/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl md:text-2xl font-bold text-white">
             Slides Manager
           </h1>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
+            {/* Slide Stats */}
+          
+            <div className="hidden sm:flex items-center px-5 py-2 rounded-2xl bg-[#0b0f0d] border border-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.08)]">
+              <p className="text-base font-semibold text-white">
+                Total:{" "}
+                <span className="text-green-400 font-bold">
+                  {slides.filter((s) => !isFallbackSlide(s)).length}
+                </span>
+              </p>
+            </div>
+
             <AnimatePresence>
               {actionMessage && (
                 <motion.span

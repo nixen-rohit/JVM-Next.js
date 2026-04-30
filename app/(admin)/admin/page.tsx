@@ -1,251 +1,210 @@
-// app/(admin)/admin/page.tsx
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth"; // ✅ Use shared auth util
-import {
-  BsBuilding,
-  BsChatLeftText,
-  BsPeople,
-  BsGraphUp,
-  BsArrowUpRight,
-  BsArrowDownRight,
-  BsPlus,
-  BsDownload,
-} from "react-icons/bs";
+import { getCurrentUser } from "@/lib/auth";
+import Link from "next/link";
+import { BsBuilding, BsChatLeftText, BsPlus, BsDownload } from "react-icons/bs";
+import { TbSlideshow } from "react-icons/tb";
 
-// ✅ Fixed: Use env var, not hardcoded secret
-// (getCurrentUser already handles JWT verification internally)
+// Add this interface
+interface DashboardProps {
+  totalProjects: number;
+  totalContacts: number;
+  totalSlides: number;
+}
 
-// Optional: Fetch real stats from DB (uncomment when ready)
-// import getPool from "@/lib/db";
-// async function getDashboardStats() {
-//   const pool = getPool();
-//   if (!pool) return null;
-//   const [projects] = await pool.query("SELECT COUNT(*) as count FROM projects");
-//   const [contacts] = await pool.query("SELECT COUNT(*) as count FROM contacts");
-//   const [users] = await pool.query("SELECT COUNT(*) as count FROM users");
-//   return { projects: projects[0].count, contacts: contacts[0].count, users: users[0].count };
-// }
+// Function to fetch projects count
+async function getTotalProjects(): Promise<number> {
+  try {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_BASE_URL ||
+      (process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000");
+
+    // ✅ Fix: Await cookies() and then get the cookie string
+    const cookieStore = await cookies();
+    const cookieString = cookieStore.toString();
+
+    const res = await fetch(`${baseUrl}/api/admin/projects?page=1&limit=1`, {
+      cache: "no-store",
+      headers: cookieString
+        ? {
+            Cookie: cookieString,
+          }
+        : {},
+    });
+
+    if (!res.ok) {
+      console.error("Failed to fetch projects count");
+      return 0;
+    }
+
+    const data = await res.json();
+    return data.total || data.projects?.length || 0;
+  } catch (error) {
+    console.error("Error fetching projects count:", error);
+    return 0;
+  }
+}
+
+// Function of fetch contacts count
+async function getTotalContacts(): Promise<number> {
+  try {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_BASE_URL ||
+      (process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000");
+
+    // ✅ Fix: Await cookies() and then get the cookie string
+    const cookieStore = await cookies();
+    const cookieString = cookieStore.toString();
+
+    const res = await fetch(`${baseUrl}/api/contacts?page=1&limit=1`, {
+      cache: "no-store",
+      headers: cookieString
+        ? {
+            Cookie: cookieString,
+          }
+        : {},
+    });
+
+    if (!res.ok) {
+      console.error("Failed to fetch contacts count");
+      return 0;
+    }
+
+    const data = await res.json();
+    return data.total || data.contacts?.length || 0;
+  } catch (error) {
+    console.error("Error fetching contacts count:", error);
+    return 0;
+  }
+}
+
+// Function of fetch slides count
+async function getTotalSlides(): Promise<number> {
+  try {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_BASE_URL ||
+      (process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000");
+
+    const res = await fetch(`${baseUrl}/api/hero-slides?all=true`, {
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      console.error("Failed to fetch slides count");
+      return 0;
+    }
+
+    const data = await res.json();
+    // Return count of real slides (excluding fallback)
+    const slides = data.slides || [];
+    return slides.filter((s: any) => s.id !== "fallback-no-projects").length;
+  } catch (error) {
+    console.error("Error fetching slides count:", error);
+    return 0;
+  }
+}
 
 export default async function AdminDashboardPage() {
-  // ✅ 1. Check auth using shared util (consistent with middleware)
+  // ✅ Check auth
   const user = await getCurrentUser();
-  
+
   if (!user) {
-    // ✅ 2. Redirect to admin login (not /login)
     redirect("/admin/login");
   }
 
-  // Optional: Fetch real data
-  // const statsData = await getDashboardStats();
+  // Update the stats array (replace the existing one)
+  const [totalProjects, totalContacts, totalSlides] = await Promise.all([
+    getTotalProjects(),
+    getTotalContacts(),
+    getTotalSlides(),
+  ]);
 
-  // Mock data (replace with DB fetch when ready)
   const stats = [
     {
       title: "Total Projects",
-      value: "24", // statsData?.projects ?? "24"
-      change: "+12%",
-      trend: "up" as const,
+      value: totalProjects.toString(),
       icon: BsBuilding,
-      color: "from-blue-600 to-cyan-500",
-      glow: "shadow-blue-900/40",
+      link: "/admin/projects",
     },
     {
       title: "Contact Requests",
-      value: "156", // statsData?.contacts ?? "156"
-      change: "+24%",
-      trend: "up" as const,
+      value: totalContacts.toString(),
       icon: BsChatLeftText,
-      color: "from-violet-600 to-purple-500",
-      glow: "shadow-violet-900/40",
+      link: "/admin/contacts",
     },
     {
-      title: "Active Users",
-      value: "1,284", // statsData?.users ?? "1,284"
-      change: "+8%",
-      trend: "up" as const,
-      icon: BsPeople,
-      color: "from-emerald-600 to-teal-500",
-      glow: "shadow-emerald-900/40",
-    },
-  ];
-
-  const recentActivity = [
-    {
-      id: 1,
-      user: "Sarah Johnson",
-      action: "submitted a contact request",
-      target: "Luxury Villa #402",
-      time: "2 min ago",
-      avatar: "SJ",
-    },
-    {
-      id: 2,
-      user: "Mike Chen",
-      action: "updated project",
-      target: "Downtown Apartments",
-      time: "15 min ago",
-      avatar: "MC",
-    },
-    {
-      id: 3,
-      user: "Emma Wilson",
-      action: "registered as new user",
-      target: "",
-      time: "1 hour ago",
-      avatar: "EW",
+      title: "Hero Slides",
+      value: totalSlides.toString(),
+      icon: TbSlideshow,
+      link: "/admin/hero-slides",
     },
   ];
 
   return (
-    <div className="space-y-6 ">
-      {/* Header */}
-      <div className=" flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="min-h-screen bg-black p-6 lg:p-10 space-y-8">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-zinc-800 pb-8">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-white">
-            Dashboard
+          <h1 className="text-4xl font-extrabold tracking-tight text-white  ">
+            ADMIN DASHBOARD <span className="text-emerald-500">.</span>
           </h1>
-          <p className="text-gray-400 mt-1">
-            Welcome back ! Here&apos;s what&apos;s happening with your platform.
+          <p className="text-zinc-500 mt-2 font-medium">
+            System Online. Welcome back
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 hover:text-white transition-colors flex items-center gap-2">
-            <BsDownload className="w-4 h-4" />
-            Export
-          </button>
-
-          <button className="px-4 py-2 text-sm font-medium text-white bg-linear-to-r from-blue-600 to-cyan-500 rounded-lg hover:from-blue-700 hover:to-cyan-600 transition-all shadow-lg shadow-blue-900/30 flex items-center gap-2">
-            <BsPlus className="w-4 h-4" />
-            New Project
-          </button>
-        </div>
+        <Link
+          href="/admin/projects/new"
+          className="flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors shadow-lg shadow-green-900/30"
+        >
+          {/* Subtle button glare effect */}
+          <BsPlus className="w-5 h-5 stroke-1" />
+          NEW PROJECT
+        </Link>
       </div>
 
-      {/* Stats */}
+      {/* Stats Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {stats.map((stat) => {
           const Icon = stat.icon;
-          const isUp = stat.trend === "up";
 
           return (
-            <div
+            <Link
               key={stat.title}
-              className="group bg-gray-900 p-6 rounded-2xl border border-gray-800 hover:border-gray-700 transition-all duration-300 hover:shadow-xl hover:shadow-gray-900/50"
+              href={stat.link}
+              className="group relative bg-zinc-900/50 border border-zinc-800 p-6 transition-all hover:border-emerald-500/50 hover:bg-zinc-900"
             >
-              <div className="flex items-start justify-between">
+              {/* Green Glow Accent on Hover */}
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+                <div className="absolute -inset-px bg-gradient-to-br from-emerald-500/20 to-transparent blur-sm" />
+              </div>
+
+              <div className="relative flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-400">
+                  <p className="text-xs font-black uppercase tracking-widest text-zinc-500 group-hover:text-emerald-500 transition-colors">
                     {stat.title}
                   </p>
-                  <p className="text-3xl font-bold text-white mt-2">
+                  <p className="text-4xl font-bold text-white mt-3 tabular-nums">
                     {stat.value}
                   </p>
                 </div>
 
-                <div
-                  className={`p-3 rounded-xl bg-linear-to-br ${stat.color} shadow-lg ${stat.glow}`}
-                >
-                  <Icon className="w-6 h-6 text-white" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-black border border-zinc-800 group-hover:border-emerald-500/50 transition-all shadow-inner">
+                  <Icon className="w-6 h-6 text-emerald-500 group-hover:scale-110 transition-transform" />
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center gap-2">
-                <span
-                  className={`flex items-center text-sm font-medium ${
-                    isUp ? "text-emerald-400" : "text-rose-400"
-                  }`}
-                >
-                  {isUp ? (
-                    <BsArrowUpRight className="w-4 h-4 mr-1" />
-                  ) : (
-                    <BsArrowDownRight className="w-4 h-4 mr-1" />
-                  )}
-                  {stat.change}
-                </span>
-
-                <span className="text-sm text-gray-500">vs last month</span>
-              </div>
-            </div>
+              {/* Bottom "Progress" Bar Decorative element */}
+              <div className="absolute bottom-0 left-0 h-[2px] w-0 bg-emerald-500 transition-all duration-500 group-hover:w-full" />
+            </Link>
           );
         })}
-      </div>
-
-      {/* Recent Activity + Performance */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
-          <div className="p-6 border-b border-gray-800 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-white">
-              Recent Activity
-            </h2>
-          </div>
-
-          <div className="divide-y divide-gray-800">
-            {recentActivity.map((activity) => (
-              <div
-                key={activity.id}
-                className="p-4 hover:bg-gray-800/50 transition-colors flex items-start gap-4"
-              >
-                <div className="w-10 h-10 rounded-full bg-linear-to-br from-gray-600 to-gray-700 flex items-center justify-center text-white text-sm font-medium border border-gray-600">
-                  {activity.avatar}
-                </div>
-
-                <div className="flex-1">
-                  <p className="text-sm text-gray-200">
-                    <span className="font-medium text-white">
-                      {activity.user}
-                    </span>{" "}
-                    <span className="text-gray-400">{activity.action}</span>{" "}
-                    {activity.target && (
-                      <span className="font-medium text-blue-400">
-                        {activity.target}
-                      </span>
-                    )}
-                  </p>
-
-                  <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Performance</h2>
-
-          <div className="space-y-4">
-            {[
-              { label: "Page Views", value: 78, color: "bg-blue-500" },
-              { label: "Conversions", value: 45, color: "bg-emerald-500" },
-              { label: "Bounce Rate", value: 32, color: "bg-violet-500" },
-            ].map((item) => (
-              <div key={item.label}>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-400">{item.label}</span>
-                  <span className="font-medium text-white">{item.value}%</span>
-                </div>
-
-                <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${item.color} rounded-full transition-all duration-500`}
-                    style={{ width: `${item.value}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-gray-800">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">This month</span>
-              <span className="flex items-center text-emerald-400 font-medium">
-                <BsGraphUp className="w-4 h-4 mr-1" />
-                +18.5%
-              </span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

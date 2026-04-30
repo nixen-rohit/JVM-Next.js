@@ -174,7 +174,7 @@ function PageHeader({ totalProjects }: { totalProjects: number | null }) {
         {totalProjects !== null && (
           <div className="rounded-xl border border-green-900/40 bg-neutral-900 px-4 py-2.5 text-sm text-white shadow-lg shadow-green-900/10">
             Total:{" "}
-            <span className="font-semibold text-green-600">
+            <span className="font-bold text-green-600">
               {totalProjects}
             </span>
           </div>

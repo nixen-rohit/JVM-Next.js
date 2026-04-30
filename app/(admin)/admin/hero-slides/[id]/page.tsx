@@ -82,23 +82,19 @@ const createNewSlide = (): SlideConfig => {
   return normalizeSlide(base);
 };
 
-
-
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
-    
+
     return () => clearTimeout(handler);
   }, [value, delay]);
-  
+
   return debouncedValue;
 }
-
-
 
 export default function EditHeroSlide() {
   const params = useParams<{ id: string }>();
@@ -115,6 +111,7 @@ export default function EditHeroSlide() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const debouncedSlide = useDebounce(slide, 100);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
 
   // 🔒 Store preview URL in ref for reliable cleanup (Fix #4)
   const previewUrlRef = useRef<string | null>(null);
@@ -123,9 +120,6 @@ export default function EditHeroSlide() {
   const isNewSlide = params.id === "new";
   const isFallback = slide ? isFallbackSlide(slide) : false;
 
-
-
-  
   useEffect(() => {
     if (!isNewSlide) {
       fetchSlide(params.id);
@@ -134,8 +128,6 @@ export default function EditHeroSlide() {
       setIsLoading(false);
     }
   }, [params.id, isNewSlide]);
-
-
 
   // 🔒 Cleanup object URLs on unmount (Fix #4 - improved)
   useEffect(() => {
@@ -227,70 +219,106 @@ export default function EditHeroSlide() {
     });
   }, []);
 
-  // 🔴 NEW: Compress image THEN convert to Base64
-  const compressAndConvertToBase64 = async (file: File): Promise<string> => {
+  // Add this helper function inside your component or import from lib
+  const validateAndCompressImage = async (
+    file: File,
+    maxSizeMB: number = 1,
+  ): Promise<{ success: boolean; file?: File; error?: string }> => {
+    const fileSizeMB = file.size / (1024 * 1024);
+
+    if (fileSizeMB > maxSizeMB) {
+      // Try to compress
+      try {
+        const options = {
+          maxSizeMB: maxSizeMB - 0.1, // Slightly under limit
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+          initialQuality: 0.85,
+        };
+
+        const compressedFile = await imageCompression(file, options);
+        const compressedSizeMB = compressedFile.size / (1024 * 1024);
+
+        if (compressedSizeMB > maxSizeMB) {
+          return {
+            success: false,
+            error: `Image too large (${fileSizeMB.toFixed(1)}MB). Please upload an image smaller than ${maxSizeMB}MB or manually compress it.`,
+          };
+        }
+
+        return { success: true, file: compressedFile };
+      } catch (error) {
+        return {
+          success: false,
+          error: `Failed to compress image. Please upload an image smaller than ${maxSizeMB}MB.`,
+        };
+      }
+    }
+
+    // File is already under limit, but still compress for optimization
     try {
-      // ⚙️ Compression options (tune for your needs)
       const options = {
-        maxSizeMB: 2, // Max final file size (after compression)
-        maxWidthOrHeight: 1920, // Resize large images (hero slides typically 1920px wide)
-        useWebWorker: true, // Offload work to background thread
-        fileType: file.type, // Preserve original type (jpeg/png/webp)
-        // Quality is auto-adjusted to hit maxSizeMB, but you can set:
-        // initialQuality: 0.85,         // Optional: start at 85% quality
+        maxSizeMB: maxSizeMB - 0.1,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        initialQuality: 0.9,
       };
-
-      // 🗜️ Compress the image
       const compressedFile = await imageCompression(file, options);
-
-      console.log("🗜️ Compression:", {
-        original: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-        compressed: `${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`,
-        saved: `${(((file.size - compressedFile.size) / file.size) * 100).toFixed(1)}%`,
-      });
-
-      // 🔁 Convert compressed file to Base64
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(compressedFile);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (error) => reject(error);
-      });
+      return { success: true, file: compressedFile };
     } catch (error) {
-      console.error("❌ Compression failed, falling back to original:", error);
-      // Fallback: compress failed, use original file
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (error) => reject(error);
-      });
+      // If compression fails, use original
+      return { success: true, file };
     }
   };
 
   // ─────────────────────────────────────────────────────────────
   // 🖼️ IMAGE HANDLERS (Fix #4: Memory leak prevention)
   // ─────────────────────────────────────────────────────────────
-  const handleImageUpload = (file: File) => {
+  const handleImageUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       alert("Please upload a valid image file");
       return;
     }
 
-    // 🔒 Revoke OLD preview URL before creating new one (Fix #4)
-    if (previewUrlRef.current) {
-      URL.revokeObjectURL(previewUrlRef.current);
-      previewUrlRef.current = null;
+    setIsProcessingImage(true);
+
+    try {
+      // Compress ONCE
+      const result = await validateAndCompressImage(file, 1);
+
+      if (!result.success || !result.file) {
+        throw new Error(result.error || "Failed to process image");
+      }
+
+      // Store the compressed file directly
+      const compressedFile = result.file;
+
+      // Create preview from compressed file
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = null;
+      }
+
+      const objectUrl = URL.createObjectURL(compressedFile);
+      previewUrlRef.current = objectUrl;
+
+      // Store compressed file and preview
+      updateSlide({
+        imageFile: compressedFile, // Store compressed file
+        imagePreview: objectUrl,
+        // Don't convert to base64 yet - do it only on save
+        imageUrl: null,
+      });
+    } catch (error) {
+      console.error("Image processing failed:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to process image. Please try a smaller image (max 1MB).",
+      );
+    } finally {
+      setIsProcessingImage(false);
     }
-
-    const objectUrl = URL.createObjectURL(file);
-    previewUrlRef.current = objectUrl;
-
-    updateSlide({
-      imageFile: file,
-      imagePreview: objectUrl,
-      imageUrl: null,
-    });
   };
 
   const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
@@ -321,6 +349,46 @@ export default function EditHeroSlide() {
     updateSlide({ imageFile: null, imagePreview: null, imageUrl: null });
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
+
+
+  // Add this function before handleSave
+const compressAndConvertToBase64 = async (file: File): Promise<string> => {
+  try {
+    // Compression options
+    const options = {
+      maxSizeMB: 0.8, // Target under 1MB
+      maxWidthOrHeight: 1920,
+      useWebWorker: true,
+      fileType: file.type,
+    };
+
+    // Compress the image
+    const compressedFile = await imageCompression(file, options);
+
+    console.log('🗜️ Compression:', {
+      original: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+      compressed: `${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`,
+      saved: `${(((file.size - compressedFile.size) / file.size) * 100).toFixed(1)}%`,
+    });
+
+    // Convert compressed file to Base64
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(compressedFile);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  } catch (error) {
+    console.error('❌ Compression failed, falling back to original:', error);
+    // Fallback: compress failed, use original file
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  }
+};
 
   // ─────────────────────────────────────────────────────────────
   // 🔘 BUTTON HANDLERS (Fix #2 & #3: Safety checks)
@@ -399,126 +467,149 @@ export default function EditHeroSlide() {
     });
   }, []);
 
-  const handleSave = async () => {
-     if (isSaving || !slide || isFallback) {
-      console.log('Save prevented:', { isSaving, hasSlide: !!slide, isFallback });
-      return;
+ 
+const handleSave = async () => {
+  if (isSaving || !slide || isFallback) {
+    console.log('Save prevented:', { isSaving, hasSlide: !!slide, isFallback });
+    return;
+  }
+
+  setIsSaving(true);
+  setSaveError(null);
+  setSaveSuccess(false);
+
+  try {
+    // Validate button links and text before sending
+    const normalized = normalizeSlide(slide);
+
+
+    
+    for (const btn of normalized.buttons) {
+      if (!btn.link || (!btn.link.startsWith('/') && !btn.link.startsWith('http') && btn.link !== '#')) {
+        throw new Error(`Invalid button link: ${btn.link}`);
+      }
+      if (!btn.text || btn.text.trim().length === 0) {
+        throw new Error('Button text cannot be empty');
+      }
     }
 
-    setIsSaving(true);
-    setSaveError(null);
-    setSaveSuccess(false);
-
-    try {
-      // 🖼️ IMAGE HANDLING: Convert to Base64 for BLOB storage
-      let imagePayload: string | null = slide.imageUrl; // Could be existing Base64 or URL
-
-      if (
-        slide.useImage &&
-        slide.imageFile &&
-        !slide.imageUrl?.startsWith("data:image")
-      ) {
-        // Compress THEN convert to Base64 for BLOB storage
-        imagePayload = await compressAndConvertToBase64(slide.imageFile);
+    // 🖼️ IMAGE HANDLING: Convert to Base64 for BLOB storage
+    let imageData: string | null = null;
+    
+    if (normalized.useImage) {
+      if (normalized.imageFile) {
+        // New image uploaded - compress and convert to Base64
+        imageData = await compressAndConvertToBase64(normalized.imageFile);
+      } else if (normalized.imageUrl && normalized.imageUrl.startsWith('data:image')) {
+        // Already a Base64 string (from previous save or preview)
+        imageData = normalized.imageUrl;
+      } else if (normalized.imageUrl && !normalized.imageUrl.startsWith('data:image')) {
+        // This is a URL from server (shouldn't happen for new uploads, but keep for compatibility)
+        // For existing slides, we don't need to send the image again
+        imageData = null;
       }
-      const normalized = normalizeSlide(slide);
-
-
-      for (const btn of normalized.buttons) {
-        if (!btn.link || (!btn.link.startsWith('/') && !btn.link.startsWith('http') && btn.link !== '#')) {
-          throw new Error(`Invalid button link: ${btn.link}`);
-        }
-        if (!btn.text || btn.text.trim().length === 0) {
-          throw new Error('Button text cannot be empty');
-        }
-      }
-      
-
-      const payload = {
-        id: normalized.id,
-        useImage: normalized.useImage,
-        // Send Base64 string (starts with "data:image/...") or null
-        imageUrl: normalized.useImage ? imagePayload : null,
-        imageAlt: normalized.imageAlt,
-        showHeading: normalized.showHeading,
-        heading: normalized.heading,
-        showTag: normalized.showTag,
-        tag: normalized.tag,
-        showButtons: normalized.showButtons,
-        buttonCount: normalized.buttonCount,
-        buttons: normalized.buttons,
-        isActive: normalized.isActive,
-        sortOrder: normalized.sortOrder,
-      };
-
-      const isNew = isNewSlide;
-      const method = isNew ? "POST" : "PUT";
-      const url = isNew
-        ? "/api/hero-slides"
-        : `/api/hero-slides?id=${normalized.id}`;
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to save slide");
-      }
-
-      const saved: Slide = await response.json();
-
-      // Map response back to SlideConfig
-      const savedConfig: SlideConfig = {
-        id: saved.id,
-        imageFile: null,
-        imagePreview: null,
-        useImage: saved.useImage ?? true,
-        // Backend returns Base64 in imageUrl field
-        imageUrl: saved.imageUrl ?? null,
-        imageAlt: saved.imageAlt ?? "Hero slide",
-        showHeading: saved.showHeading ?? true,
-        heading: saved.heading ?? "",
-        showTag: saved.showTag ?? true,
-        tag: saved.tag ?? "",
-        showButtons: saved.showButtons ?? true,
-        buttonCount: (saved.buttonCount === 0
-          ? 1
-          : (saved.buttonCount ?? 1)) as 1 | 2,
-        buttons: saved.buttons?.length
-          ? saved.buttons.map((btn) => ({
-              text: btn.text ?? "",
-              link: btn.link ?? "#",
-              variant: btn.variant ?? "primary",
-            }))
-          : [{ text: "About Us", link: "/about", variant: "primary" }],
-        isActive: saved.isActive ?? true,
-        sortOrder: saved.sortOrder ?? 0,
-      };
-
-      setSlide(normalizeSlide(savedConfig));
-      setSaveSuccess(true);
-
-      if (isNewSlide && saved.id !== "new") {
-        setTimeout(() => {
-          router.replace(`/admin/hero-slides`);
-          router.refresh();
-        }, 1200);
-      } else {
-        router.replace(`/admin/hero-slides`);
-        router.refresh();
-      }
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "An unexpected error occurred";
-      console.error("Save error:", err);
-      setSaveError(message);
-    } finally {
-      setIsSaving(false);
     }
-  };
+
+    // Prepare payload matching API expectations
+    const payload = {
+      id: normalized.id,
+      useImage: normalized.useImage,
+      imageData: imageData, // ⚠️ Note: field name is 'imageData', not 'imageUrl'
+      imageAlt: normalized.imageAlt,
+      showHeading: normalized.showHeading,
+      heading: normalized.heading,
+      showTag: normalized.showTag,
+      tag: normalized.tag,
+      showButtons: normalized.showButtons,
+      buttonCount: normalized.buttonCount,
+      buttons: normalized.buttons.map(btn => ({
+        text: btn.text,
+        link: btn.link,
+        variant: btn.variant
+      })),
+      isActive: normalized.isActive,
+      sortOrder: normalized.sortOrder,
+    };
+
+    console.log('Saving payload:', { 
+      ...payload, 
+      imageData: payload.imageData ? `${payload.imageData.substring(0, 100)}...` : null 
+    });
+
+    
+
+    const isNew = isNewSlide;
+    const method = isNew ? "POST" : "PUT";
+    const url = isNew
+      ? "/api/hero-slides"
+      : `/api/hero-slides?id=${normalized.id}`;
+
+    const response = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('API Error Response:', error);
+      throw new Error(error.error || error.details || "Failed to save slide");
+    }
+
+    const saved: Slide = await response.json();
+
+    // Map response back to SlideConfig
+    const savedConfig: SlideConfig = {
+      id: saved.id,
+      imageFile: null,
+      imagePreview: null,
+      useImage: saved.useImage ?? true,
+      imageUrl: saved.imageUrl ?? null,
+      imageAlt: saved.imageAlt ?? "Hero slide",
+      showHeading: saved.showHeading ?? true,
+      heading: saved.heading ?? "",
+      showTag: saved.showTag ?? true,
+      tag: saved.tag ?? "",
+      showButtons: saved.showButtons ?? true,
+      buttonCount: (saved.buttonCount === 0 ? 1 : (saved.buttonCount ?? 1)) as 1 | 2,
+      buttons: saved.buttons?.length
+        ? saved.buttons.map((btn) => ({
+            text: btn.text ?? "",
+            link: btn.link ?? "#",
+            variant: btn.variant ?? "primary",
+          }))
+        : [{ text: "About Us", link: "/about", variant: "primary" }],
+      isActive: saved.isActive ?? true,
+      sortOrder: saved.sortOrder ?? 0,
+    };
+
+    setSlide(normalizeSlide(savedConfig));
+    setSaveSuccess(true);
+
+    // Invalidate cache by refreshing
+    setTimeout(() => {
+      router.push('/admin/hero-slides');
+      router.refresh();
+    }, 1200);
+
+
+    console.log('Sending to API:', {
+  method,
+  url,
+  hasImageData: !!payload.imageData,
+  imageDataLength: payload.imageData?.length,
+  useImage: payload.useImage,
+  buttonCount: payload.buttonCount,
+});
+    
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "An unexpected error occurred";
+    console.error("Save error:", err);
+    setSaveError(message);
+  } finally {
+    setIsSaving(false);
+  }
+};
 
   // 🔴 UPDATED: Delete with beautiful modal (no NODE_ENV check)
   const openDeleteConfirm = () => setShowDeleteConfirm(true);
@@ -584,6 +675,7 @@ export default function EditHeroSlide() {
   const getPreviewSrc = (): string | null => {
     if (slide.imagePreview) return slide.imagePreview;
     if (slide.imageUrl) return slide.imageUrl;
+    if (slide.imageData) return slide.imageData; // ← Add fallback
     return null;
   };
 
@@ -733,21 +825,26 @@ export default function EditHeroSlide() {
                     exit={{ opacity: 0, height: 0 }}
                     className="space-y-4 overflow-hidden"
                   >
+                    {/* Image upload area - Always rendered, but conditionally styled/disabled */}
                     <div
-                      onDrop={handleDrop}
-                      onDragOver={handleDragOver}
-                      onDragLeave={handleDragLeave}
-                      onClick={() =>
-                        !isFallback && fileInputRef.current?.click()
-                      }
-                      className={`relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                      onDrop={slide.useImage ? handleDrop : undefined}
+                      onDragOver={slide.useImage ? handleDragOver : undefined}
+                      onDragLeave={slide.useImage ? handleDragLeave : undefined}
+                      onClick={() => {
+                        if (!isFallback && slide.useImage && !isSaving) {
+                          fileInputRef.current?.click();
+                        }
+                      }}
+                      className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
                         isFallback ? "cursor-not-allowed" : ""
                       } ${
-                        isDragging
-                          ? "border-green-500 bg-green-900/20"
-                          : getPreviewSrc()
-                            ? "border-green-700/50 bg-zinc-800/50"
-                            : "border-zinc-700 hover:border-green-600 hover:bg-zinc-800/30"
+                        !slide.useImage
+                          ? "opacity-50 bg-zinc-900/30 border-zinc-700 cursor-not-allowed"
+                          : isDragging
+                            ? "border-green-500 bg-green-900/20 cursor-pointer"
+                            : getPreviewSrc()
+                              ? "border-green-700/50 bg-zinc-800/50 cursor-pointer"
+                              : "border-zinc-700 hover:border-green-600 hover:bg-zinc-800/30 cursor-pointer"
                       }`}
                     >
                       <input
@@ -756,11 +853,32 @@ export default function EditHeroSlide() {
                         accept="image/*"
                         onChange={handleFileSelect}
                         className="hidden"
-                        disabled={isSaving || isFallback}
+                        disabled={isSaving || isFallback || !slide.useImage}
                       />
 
-                      {/* 🔒 Safe image rendering (Fix #5) */}
-                      {getPreviewSrc() && (
+                      {/* Show disabled overlay when useImage is false */}
+                      {!slide.useImage && (
+                        <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
+                          <p className="text-zinc-400 text-sm">
+                            Image upload disabled
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Loading overlay for image processing */}
+                      {isProcessingImage && (
+                        <div className="absolute inset-0 bg-black/70 rounded-lg flex items-center justify-center z-10">
+                          <div className="text-center">
+                            <div className="w-8 h-8 border-2 border-green-600 border-t-white rounded-full animate-spin mx-auto mb-2" />
+                            <p className="text-white text-sm">
+                              Processing image...
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Preview or upload area */}
+                      {getPreviewSrc() ? (
                         <div className="relative aspect-video w-full overflow-hidden rounded-lg">
                           <Image
                             src={getPreviewSrc()!}
@@ -768,31 +886,41 @@ export default function EditHeroSlide() {
                             fill
                             className="object-cover"
                           />
-                          {!isFallback && (
+                          {!isFallback && slide.useImage && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (!isSaving) removeImage();
+                                if (!isSaving && !isProcessingImage)
+                                  removeImage();
                               }}
-                              disabled={isSaving}
+                              disabled={
+                                isSaving || isFallback || isProcessingImage
+                              }
                               className="absolute top-2 right-2 p-1.5 bg-red-600 hover:bg-red-500 disabled:opacity-50 rounded-full text-white shadow-lg transition-colors"
                             >
                               <GoX size={16} />
                             </button>
                           )}
                         </div>
-                      )}
-
-                      {!getPreviewSrc() && (
+                      ) : (
                         <div className="space-y-3">
-                          <GoUpload className="mx-auto text-3xl text-green-500" />
+                          <GoUpload
+                            className={`mx-auto text-3xl ${slide.useImage ? "text-green-500" : "text-zinc-600"}`}
+                          />
                           <div>
-                            <p className="font-medium text-green-400">
-                              Click or drag image here
+                            <p
+                              className={`font-medium ${slide.useImage ? "text-green-400" : "text-zinc-500"}`}
+                            >
+                              {slide.useImage
+                                ? "Click or drag image here"
+                                : "Image upload disabled"}
                             </p>
-                            <p className="text-xs text-zinc-500 mt-1">
-                              16:9 recommended • Max 2MB
-                            </p>
+                            {slide.useImage && (
+                              <p className="text-xs text-zinc-500 mt-1">
+                                16:9 recommended • Max 1MB (automatically
+                                compressed)
+                              </p>
+                            )}
                           </div>
                         </div>
                       )}
@@ -1021,6 +1149,11 @@ export default function EditHeroSlide() {
                     fill
                     className="object-cover"
                     priority
+                    onError={(e) => {
+                      console.error("Failed to load image preview");
+                      e.currentTarget.style.display = "none";
+                      // Optionally show fallback
+                    }}
                   />
                 ) : (
                   <div className="absolute inset-0 bg-linear-to-br from-zinc-900 via-black to-green-950" />
