@@ -78,7 +78,7 @@ export default function NavbarProjectsDropdown({
             <FiMapPin
               className={isMobile ? "text-amber-600" : "text-black text-sm"}
             />
-            <span className="truncate">{project.name}</span>
+            <span className="truncate font-bold ">{project.name}</span>
           </Link>
         </motion.div>
       ))}
