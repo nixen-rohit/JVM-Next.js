@@ -169,14 +169,37 @@ export function SectionsTab({ form, setForm, onUpload, onRemove }: Props) {
   const [expandedSection, setExpandedSection] = useState<SectionName | null>(null);
   const [uploadError, setUploadError] = useState<Record<string, string>>({});
 
+   
+useEffect(() => {
+  // Log current stats when component mounts or updates
+  console.log("🎨 [SectionsTab] Current stats in form:", form.config.stats);
+  console.log("🎨 [SectionsTab] Stats type:", typeof form.config.stats);
+  console.log("🎨 [SectionsTab] Is array:", Array.isArray(form.config.stats));
+  
+  // If stats exist, log each value
+  if (form.config.stats && Array.isArray(form.config.stats)) {
+    form.config.stats.forEach((stat: StatItem) => {
+      console.log(`📊 Stat: ${stat.icon} = ${stat.title}`);
+    });
+  }
+}, [form.config.stats]);
+
+
   // useRef cache to avoid creating new object URLs on every render
   const pendingUrlsRef = useRef<Record<string, string>>({});
+
+    console.log("🎨 [SectionsTab] Rendering with config:", form.config);
+  console.log("🎨 [SectionsTab] Stats in form.config:", form.config.stats);
+  console.log("🎨 [SectionsTab] Stats type:", typeof form.config.stats);
+  console.log("🎨 [SectionsTab] Is array:", Array.isArray(form.config.stats));
 
   useEffect(() => {
     return () => {
       Object.values(pendingUrlsRef.current).forEach(URL.revokeObjectURL);
     };
   }, []);
+
+  
 
   const toggleSection = useCallback(
     (sectionId: PageSectionName) => {
@@ -244,13 +267,25 @@ export function SectionsTab({ form, setForm, onUpload, onRemove }: Props) {
     [setForm],
   );
 
-  const getStatValue = useCallback(
-    (field: StatField): string => {
-      const stat: StatItem | undefined = form.config.stats?.find((s: StatItem) => s.icon === field);
-      return stat?.title || "";
-    },
-    [form.config.stats],
-  );
+ const getStatValue = useCallback(
+  (field: StatField): string => {
+    if (!form.config.stats || !Array.isArray(form.config.stats)) {
+      console.log(`⚠️ No stats array found for field: ${field}`);
+      return "";
+    }
+    
+    const stat = form.config.stats.find((s: StatItem) => s.icon === field);
+    const value = stat?.title || "";
+    
+    // Log to verify
+    if (value) {
+      console.log(`✅ Found value for ${field}: ${value}`);
+    }
+    
+    return value;
+  },
+  [form.config.stats],
+);
 
   // ✅ Modified handleFileSelect with single file limit check
   const handleFileSelect = useCallback(
@@ -511,40 +546,47 @@ export function SectionsTab({ form, setForm, onUpload, onRemove }: Props) {
                           </>
                         )}
 
-                        {/* Stats */}
-                        {section.id === "stats" && (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {STAT_FIELDS.map((field) => (
-                              <div key={field.id} className="space-y-2">
-                                <label className="flex items-center gap-2 text-sm font-medium text-white">
-                                  {field.icon}
-                                  {field.label}
-                                </label>
-                                {field.type === "select" ? (
-                                  <select
-                                    value={getStatValue(field.id)}
-                                    onChange={(e) => updateStatField(field.id, e.target.value)}
-                                    className="w-full px-3 py-2 bg-black border border-green-900/40 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-700/50 focus:border-green-700 transition"
-                                  >
-                                    <option value="">{field.placeholder}</option>
-                                    {field.options?.map((opt) => (
-                                      <option key={opt} value={opt}>{opt}</option>
-                                    ))}
-                                  </select>
-                                ) : (
-                                  <input
-                                    type="text"
-                                    value={getStatValue(field.id)}
-                                    onChange={(e) => updateStatField(field.id, e.target.value)}
-                                    placeholder={field.placeholder}
-                                    className="w-full px-3 py-2 bg-black border border-green-900/40 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-green-700/50 focus:border-green-700 transition"
-                                  />
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                      
 
+{section.id === "stats" && (
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    {STAT_FIELDS.map((field) => {
+      // Get the current value for this field
+      const currentValue = getStatValue(field.id);
+      
+      // Only show the field if it has a value OR if we're editing
+      // For admin panel, we want to show all fields so users can add values
+      return (
+        <div key={field.id} className="space-y-2">
+          <label className="flex items-center gap-2 text-sm font-medium text-white">
+            {field.icon}
+            {field.label}
+          </label>
+          {field.type === "select" ? (
+            <select
+              value={currentValue}
+              onChange={(e) => updateStatField(field.id, e.target.value)}
+              className="w-full px-3 py-2 bg-black border border-green-900/40 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-700/50 focus:border-green-700 transition"
+            >
+              <option value="">{field.placeholder}</option>
+              {field.options?.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="text"
+              value={currentValue}
+              onChange={(e) => updateStatField(field.id, e.target.value)}
+              placeholder={field.placeholder}
+              className="w-full px-3 py-2 bg-black border border-green-900/40 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-green-700/50 focus:border-green-700 transition"
+            />
+          )}
+        </div>
+      );
+    })}
+  </div>
+)}
                         {/* Highlight */}
                         {section.id === "highlight" && (
                           <>

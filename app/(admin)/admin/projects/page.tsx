@@ -1,7 +1,7 @@
 // app/(admin)/admin/projects/page.tsx - Add delete confirmation modal
 
 "use client";
-
+import { ProjectReorder } from "@/components/admin/ProjectReorder";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Plus, Pencil } from "lucide-react";
@@ -18,6 +18,9 @@ export default function AdminProjectsPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalProjects, setTotalProjects] = useState(0);
+
+  const [showReorderModal, setShowReorderModal] = useState(false);
+  const [reorderKey, setReorderKey] = useState(0);
 
   const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(totalProjects / pageSize));
@@ -97,7 +100,12 @@ export default function AdminProjectsPage() {
   // ── Main ─────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-black p-4 text-white sm:p-6">
-      <PageHeader totalProjects={totalProjects} />
+      <PageHeader
+        totalProjects={totalProjects}
+        onReorderClick={() => setShowReorderModal(true)}
+      />
+
+  
 
       {/* Empty state */}
       {projects.length === 0 ? (
@@ -156,12 +164,29 @@ export default function AdminProjectsPage() {
           )}
         </div>
       )}
+
+      {showReorderModal && (
+        <ProjectReorder
+          key={reorderKey}
+          onClose={() => setShowReorderModal(false)}
+          onSaved={() => {
+            setReorderKey((prev) => prev + 1);
+            fetchProjects(currentPage); // Refresh the projects list
+          }}
+        />
+      )}
     </div>
   );
 }
 
 // ── PageHeader ───────────────────────────────────────────────────────────────
-function PageHeader({ totalProjects }: { totalProjects: number | null }) {
+function PageHeader({
+  totalProjects,
+  onReorderClick,
+}: {
+  totalProjects: number | null;
+  onReorderClick: () => void;
+}) {
   return (
     <div className="mb-6 flex flex-wrap items-start justify-between gap-3 sm:mb-8">
       <div>
@@ -174,11 +199,31 @@ function PageHeader({ totalProjects }: { totalProjects: number | null }) {
         {totalProjects !== null && (
           <div className="rounded-xl border border-green-900/40 bg-neutral-900 px-4 py-2.5 text-sm text-white shadow-lg shadow-green-900/10">
             Total:{" "}
-            <span className="font-bold text-green-600">
-              {totalProjects}
-            </span>
+            <span className="font-bold text-green-600">{totalProjects}</span>
           </div>
         )}
+
+        {/* ✅ Add Reorder Button */}
+        <button
+          onClick={onReorderClick}
+          className="inline-flex items-center gap-2 rounded-lg border border-green-700/40 bg-green-900/20 px-4 py-2.5 text-sm font-medium text-green-600 transition hover:bg-green-800/30 hover:text-green-300"
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+          Reorder
+        </button>
+
         <Link
           href="/admin/projects/new"
           className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-green-900/20 transition hover:bg-green-600"

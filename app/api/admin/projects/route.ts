@@ -1,9 +1,5 @@
 // app/api/admin/projects/route.ts
-// FIX #3: Added proper pagination (page + limit) and `total` count in the response.
-//         Previously the API ignored all query params and returned every row,
-//         so the frontend pagination UI never worked and large datasets caused
-//         memory pressure.
-
+ 
 import { generateHashId } from "@/types/id";
 import { NextRequest, NextResponse } from "next/server";
 import { getPool, dbQuery, dbExecute } from "@/lib/db";
@@ -39,9 +35,9 @@ export async function GET(request: NextRequest) {
 
     // FIX #3: Apply LIMIT + OFFSET
     const [rows] = await dbQuery<RowDataPacket[]>(
-      `SELECT id, name, slug, status, is_published, created_at, updated_at
+     `SELECT id, name, slug, status, is_published, created_at, updated_at, sort_order
        FROM projects
-       ORDER BY created_at DESC
+       ORDER BY sort_order ASC, created_at ASC
        LIMIT ? OFFSET ?`,
       [limit, offset],
     );
@@ -57,7 +53,7 @@ export async function GET(request: NextRequest) {
 }
 
 // ── POST /api/admin/projects ─────────────────────────────────────────────────
-// app/api/admin/projects/route.ts
+ 
 
 export async function POST(request: NextRequest) {
   try {

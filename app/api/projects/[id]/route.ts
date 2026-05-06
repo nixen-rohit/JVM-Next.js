@@ -138,12 +138,62 @@ export async function GET(
             secondDescription: configRaw.info_seconddescription ?? "",
           }
         : undefined,
+      // Replace the stats parsing section (around line 140-150)
       stats: configRaw?.stats_config
         ? (() => {
             try {
-              return JSON.parse(configRaw.stats_config);
-            } catch {
-              return [];
+              // If it's already an object/array, return it
+              if (typeof configRaw.stats_config === "object") {
+                console.log(
+                  "📊 Stats is already an object:",
+                  configRaw.stats_config,
+                );
+                return Array.isArray(configRaw.stats_config)
+                  ? configRaw.stats_config
+                  : [];
+              }
+
+              // Try to parse as JSON
+              const parsed = JSON.parse(configRaw.stats_config);
+              console.log("📊 [BACKEND] Parsed stats:", parsed);
+              return Array.isArray(parsed) ? parsed : [];
+            } catch (error) {
+              console.error(
+                "❌ [BACKEND] Failed to parse stats_config:",
+                configRaw.stats_config,
+              );
+
+              // Attempt to fix the corrupted data
+              const rawString = String(configRaw.stats_config);
+
+              // Check if it's the corrupted format from your logs
+              if (rawString.includes("icon") && rawString.includes("title")) {
+                console.log("🔄 Attempting to recover corrupted stats data");
+
+                try {
+                  // Fix the corrupted JSON format
+                  // Convert: { desc: '', icon: 'completed', title: 'march 2019' }
+                  // To: {"desc":"","icon":"completed","title":"march 2019"}
+                  let fixed = rawString
+                    .replace(/(\w+):/g, '"$1":') // Add quotes to keys
+                    .replace(/:\s*'([^']*)'/g, ':"$1"') // Replace single quotes with double quotes
+                    .replace(/([^\\])' /g, '$1", ') // Fix trailing quotes
+                    .replace(/'(\w+)'/g, '"$1"'); // Fix quoted values
+
+                  // If it's an array of objects, wrap properly
+                  if (!fixed.startsWith("[")) {
+                    fixed = `[${fixed}]`;
+                  }
+
+                  const recovered = JSON.parse(fixed);
+                  console.log("✅ Recovered stats:", recovered);
+                  return Array.isArray(recovered) ? recovered : [];
+                } catch (recoveryError) {
+                  console.error("❌ Failed to recover stats:", recoveryError);
+                }
+              }
+
+              return []; // Return empty array as fallback
             }
           })()
         : [],
@@ -223,7 +273,6 @@ export async function GET(
   }
 }
 
- 
 // ── PUT ───────────────────────────────────────────────────────────────────────
 export async function PUT(
   request: NextRequest,
@@ -258,7 +307,10 @@ export async function PUT(
       const raw = formData.get("project");
       if (raw) {
         projectUpdate = JSON.parse(raw as string);
-        console.log("📦 Project update:", JSON.stringify(projectUpdate, null, 2));
+        console.log(
+          "📦 Project update:",
+          JSON.stringify(projectUpdate, null, 2),
+        );
       }
     } catch (err) {
       console.error("❌ Failed to parse project JSON:", err);
@@ -292,7 +344,10 @@ export async function PUT(
     if (!validated.success) {
       const details = validated.error.flatten();
       console.error("❌ Validation failed");
-      console.error("  Field errors:", JSON.stringify(details.fieldErrors, null, 2));
+      console.error(
+        "  Field errors:",
+        JSON.stringify(details.fieldErrors, null, 2),
+      );
       console.error("  Form errors:", details.formErrors);
       console.error("  Raw payload:", JSON.stringify(payload, null, 2));
 
@@ -361,8 +416,10 @@ export async function PUT(
 
       // ✅ Get keepFileIds from frontend
       const keepFileIdsRaw = formData.get("keepFileIds");
-      const keepFileIds: string[] = keepFileIdsRaw ? JSON.parse(keepFileIdsRaw as string) : [];
-      
+      const keepFileIds: string[] = keepFileIdsRaw
+        ? JSON.parse(keepFileIdsRaw as string)
+        : [];
+
       console.log(`🗑️ Files to keep (${keepFileIds.length}):`, keepFileIds);
 
       // Track which sections have new uploads
@@ -390,7 +447,8 @@ export async function PUT(
         if (!file || !meta) continue;
 
         const buffer = Buffer.from(await file.arrayBuffer());
-        const thumbnailBuffer = meta.file_type === "image" && file.size > 500000 ? buffer : null;
+        const thumbnailBuffer =
+          meta.file_type === "image" && file.size > 500000 ? buffer : null;
 
         await dbExecute(
           `INSERT INTO project_files (
@@ -418,16 +476,25 @@ export async function PUT(
       // This handles deletions for media, units, collage, and any other multi-file sections
       if (keepFileIds.length > 0) {
         // Build query to delete files not in keep list
-        const placeholders = keepFileIds.map(() => '?').join(',');
+        const placeholders = keepFileIds.map(() => "?").join(",");
         const deleteQuery = `
           DELETE FROM project_files 
           WHERE project_id = ? 
           AND section_name NOT IN ('hero', 'highlight', 'location')
           AND id NOT IN (${placeholders})
         `;
-        const [deleteResult] = await dbExecute(deleteQuery, [id, ...keepFileIds], connection);
-        console.log(`🗑️ Deleted ${(deleteResult as any).affectedRows} files not in keep list`);
-      } else if (keepFileIds.length === 0 && sectionsWithNewUploads.size === 0) {
+        const [deleteResult] = await dbExecute(
+          deleteQuery,
+          [id, ...keepFileIds],
+          connection,
+        );
+        console.log(
+          `🗑️ Deleted ${(deleteResult as any).affectedRows} files not in keep list`,
+        );
+      } else if (
+        keepFileIds.length === 0 &&
+        sectionsWithNewUploads.size === 0
+      ) {
         // If no files to keep AND no new uploads, delete ALL multi-section files
         const deleteQuery = `
           DELETE FROM project_files 
@@ -435,12 +502,15 @@ export async function PUT(
           AND section_name NOT IN ('hero', 'highlight', 'location')
         `;
         const [deleteResult] = await dbExecute(deleteQuery, [id], connection);
-        console.log(`🗑️ Deleted ${(deleteResult as any).affectedRows} files (no keep list)`);
+        console.log(
+          `🗑️ Deleted ${(deleteResult as any).affectedRows} files (no keep list)`,
+        );
       }
 
       // 3. Upsert project_configs (unchanged)
       if (config && Object.keys(config).length > 0) {
-        const { sections, hero, info, stats, highlight, location, collage } = config;
+        const { sections, hero, info, stats, highlight, location, collage } =
+          config;
 
         const [existing] = await dbQuery<RowDataPacket[]>(
           "SELECT id FROM project_configs WHERE project_id = ?",
@@ -493,7 +563,13 @@ export async function PUT(
           }
           if (stats !== undefined) {
             updateFields.push("stats_config = ?");
-            updateValues.push(stats && stats.length > 0 ? JSON.stringify(stats) : null);
+            // Always store as JSON array, even if empty
+            updateValues.push(
+              stats && stats.length > 0
+                ? JSON.stringify(stats)
+                : JSON.stringify([]),
+            );
+            console.log("📊 Updating stats with:", stats);
           }
           if (highlight?.title !== undefined) {
             updateFields.push("highlight_title = ?");
@@ -529,17 +605,17 @@ export async function PUT(
           const configId = randomUUID();
           await dbExecute(
             `INSERT INTO project_configs (
-              id, project_id,
-              section_hero_enabled, section_info_enabled, section_stats_enabled,
-              section_highlight_enabled, section_media_enabled, section_units_enabled,
-              section_collage_enabled, section_location_enabled,
-              hero_title, hero_subtitle,
-              info_title, info_firstdescription, info_seconddescription,
-              stats_config,
-              highlight_title, highlight_paragraph,
-              google_map_embed_url,
-              collage_show_more_limit, collage_layout_pattern
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      id, project_id,
+      section_hero_enabled, section_info_enabled, section_stats_enabled,
+      section_highlight_enabled, section_media_enabled, section_units_enabled,
+      section_collage_enabled, section_location_enabled,
+      hero_title, hero_subtitle,
+      info_title, info_firstdescription, info_seconddescription,
+      stats_config,
+      highlight_title, highlight_paragraph,
+      google_map_embed_url,
+      collage_show_more_limit, collage_layout_pattern
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               configId,
               id,
@@ -556,7 +632,9 @@ export async function PUT(
               info?.title ?? null,
               info?.firstDescription ?? null,
               info?.secondDescription ?? null,
-              stats && stats.length > 0 ? JSON.stringify(stats) : null,
+              stats && stats.length > 0
+                ? JSON.stringify(stats)
+                : JSON.stringify([]),
               highlight?.title ?? null,
               highlight?.paragraph ?? null,
               location?.googleMapEmbedUrl ?? null,

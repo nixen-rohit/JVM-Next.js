@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Trash2 } from "lucide-react";
-import {  ProjectFormState,  SectionName,} from "@/types/project";
+import { ProjectFormState, SectionName } from "@/types/project";
 
 import { markProjectsChanged } from "@/lib/navbarCache";
 import { compressImage, getFileType } from "@/lib/imageCompression";
@@ -73,6 +73,17 @@ export default function AdminProjectEditPage() {
       const data = await res.json();
       console.log("🔍 [EDIT PAGE] Success data keys:", Object.keys(data));
 
+      console.log("🔍 [FRONTEND] Full API response:", data);
+console.log("🔍 [FRONTEND] Config received:", data.config);
+console.log("🔍 [FRONTEND] Stats received:", data.config?.stats);
+console.log("🔍 [FRONTEND] Stats type:", typeof data.config?.stats);
+console.log("🔍 [FRONTEND] Is array:", Array.isArray(data.config?.stats));
+
+// ✅ Ensure stats is always an array
+    const statsArray = Array.isArray(data.config?.stats) ? data.config.stats : [];
+    console.log("✅ Processed stats array:", statsArray);
+
+
       setForm({
         project: {
           name: data.project.name,
@@ -80,7 +91,10 @@ export default function AdminProjectEditPage() {
           status: data.project.status,
           is_published: data.project.is_published,
         },
-        config: data.config,
+         config: {
+        ...data.config,
+        stats: statsArray, // Ensure stats is an array
+      },
         files: {} as Record<SectionName, File[]>,
         existingFiles: data.files || {},
         downloads:
@@ -175,118 +189,119 @@ export default function AdminProjectEditPage() {
   );
 
   // ── Save ───────────────────────────────────────────────────────────────────
-const handleSave = async () => {
-  if (!form) return;
-  setSaving(true);
-  setSaveError(null);
+  const handleSave = async () => {
+    if (!form) return;
+    setSaving(true);
+    setSaveError(null);
 
-  try {
-    const formData = new FormData();
+    try {
+      const formData = new FormData();
 
-    // ✅ Send project data
-    const projectData = {
-      ...form.project,
-      is_published: form.project.is_published ? 1 : 0,
-    };
-    formData.append("project", JSON.stringify(projectData));
-
-    // ✅ Send config
-    const cleanConfig = JSON.parse(JSON.stringify(form.config));
-    if (cleanConfig.stats && cleanConfig.stats.length === 0) {
-      delete cleanConfig.stats;
-    }
-    if (cleanConfig.sections?.collage && !cleanConfig.collage) {
-      cleanConfig.collage = {
-        showMoreLimit: 6,
-        layoutPattern: "modulo-6",
+      // ✅ Send project data
+      const projectData = {
+        ...form.project,
+        is_published: form.project.is_published ? 1 : 0,
       };
-    }
-    formData.append("config", JSON.stringify(cleanConfig));
+      formData.append("project", JSON.stringify(projectData));
 
-    // ✅ CRITICAL: Send IDs of existing files to KEEP
-    const keepFileIds: string[] = [];
-    
-    // Collect all existing file IDs that are still present
-    Object.entries(form.existingFiles).forEach(([section, files]) => {
-      files.forEach((file) => {
-        if (file.id && !file.is_pending) {
-          keepFileIds.push(file.id);
-        }
-      });
-    });
-    
-    console.log("📦 Keeping file IDs:", keepFileIds);
-    formData.append("keepFileIds", JSON.stringify(keepFileIds));
+      
+      // In handleSave - 
+      const cleanConfig = JSON.parse(JSON.stringify(form.config));
+      if (cleanConfig.stats && cleanConfig.stats.length === 0) {
+        delete cleanConfig.stats;
+      }
+      if (cleanConfig.sections?.collage && !cleanConfig.collage) {
+        cleanConfig.collage = {
+          showMoreLimit: 6,
+          layoutPattern: "modulo-6",
+        };
+      }
+      formData.append("config", JSON.stringify(cleanConfig));
 
-    // ✅ Handle new file uploads
-    const fileMetadata: any[] = [];
-    Object.entries(form.files).forEach(([section, files]) => {
-      files.forEach((file, index) => {
-        formData.append("files", file);
-        fileMetadata.push({
-          section_name: section,
-          file_type: getFileType(file),
-          mime_type: file.type,
-          file_name: file.name,
-          alt_text: "",
-          sort_order: index,
+      // ✅ CRITICAL: Send IDs of existing files to KEEP
+      const keepFileIds: string[] = [];
+
+      // Collect all existing file IDs that are still present
+      Object.entries(form.existingFiles).forEach(([section, files]) => {
+        files.forEach((file) => {
+          if (file.id && !file.is_pending) {
+            keepFileIds.push(file.id);
+          }
         });
       });
-    });
 
-    if (fileMetadata.length > 0) {
-      formData.append("fileMetadata", JSON.stringify(fileMetadata));
+      console.log("📦 Keeping file IDs:", keepFileIds);
+      formData.append("keepFileIds", JSON.stringify(keepFileIds));
+
+      // ✅ Handle new file uploads
+      const fileMetadata: any[] = [];
+      Object.entries(form.files).forEach(([section, files]) => {
+        files.forEach((file, index) => {
+          formData.append("files", file);
+          fileMetadata.push({
+            section_name: section,
+            file_type: getFileType(file),
+            mime_type: file.type,
+            file_name: file.name,
+            alt_text: "",
+            sort_order: index,
+          });
+        });
+      });
+
+      if (fileMetadata.length > 0) {
+        formData.append("fileMetadata", JSON.stringify(fileMetadata));
+      }
+
+      // ✅ Handle brochure & document (unchanged)
+      const brochureData = form.downloads.brochure;
+      if (brochureData?.file) {
+        formData.append("brochureFile", brochureData.file);
+        formData.append("brochureTitle", brochureData.title || "");
+      } else if (brochureData?.existingFileId) {
+        formData.append("brochureKeep", "true");
+        formData.append("brochureTitle", brochureData.title || "");
+        formData.append("brochureExistingId", brochureData.existingFileId);
+      } else {
+        formData.append("brochureDelete", "true");
+      }
+
+      const documentData = form.downloads.document;
+      if (documentData?.file) {
+        formData.append("documentFile", documentData.file);
+        formData.append("documentTitle", documentData.title || "");
+      } else if (documentData?.existingFileId) {
+        formData.append("documentKeep", "true");
+        formData.append("documentTitle", documentData.title || "");
+        formData.append("documentExistingId", documentData.existingFileId);
+      } else {
+        formData.append("documentDelete", "true");
+      }
+
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: "PUT",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        invalidateProjectCache();
+        markProjectsChanged();
+        router.refresh();
+        setTimeout(() => {
+          router.push("/admin/projects");
+        }, 1000);
+      } else {
+        const error = await res.json();
+        throw new Error(error.error || "Save failed");
+      }
+    } catch (err) {
+      console.error(err);
+      setSaveError(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setSaving(false);
     }
-
-    // ✅ Handle brochure & document (unchanged)
-    const brochureData = form.downloads.brochure;
-    if (brochureData?.file) {
-      formData.append("brochureFile", brochureData.file);
-      formData.append("brochureTitle", brochureData.title || "");
-    } else if (brochureData?.existingFileId) {
-      formData.append("brochureKeep", "true");
-      formData.append("brochureTitle", brochureData.title || "");
-      formData.append("brochureExistingId", brochureData.existingFileId);
-    } else {
-      formData.append("brochureDelete", "true");
-    }
-
-    const documentData = form.downloads.document;
-    if (documentData?.file) {
-      formData.append("documentFile", documentData.file);
-      formData.append("documentTitle", documentData.title || "");
-    } else if (documentData?.existingFileId) {
-      formData.append("documentKeep", "true");
-      formData.append("documentTitle", documentData.title || "");
-      formData.append("documentExistingId", documentData.existingFileId);
-    } else {
-      formData.append("documentDelete", "true");
-    }
-
-    const res = await fetch(`/api/projects/${projectId}`, {
-      method: "PUT",
-      body: formData,
-      credentials: "include",
-    });
-
-    if (res.ok) {
-      invalidateProjectCache();
-      markProjectsChanged();
-      router.refresh();
-      setTimeout(() => {
-        router.push("/admin/projects");
-      }, 1000);
-    } else {
-      const error = await res.json();
-      throw new Error(error.error || "Save failed");
-    }
-  } catch (err) {
-    console.error(err);
-    setSaveError(err instanceof Error ? err.message : "Save failed");
-  } finally {
-    setSaving(false);
-  }
-};
+  };
   // ── Delete ─────────────────────────────────────────────────────────────────
 
   const confirmDelete = async () => {

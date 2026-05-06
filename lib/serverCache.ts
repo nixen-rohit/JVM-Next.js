@@ -7,6 +7,7 @@ interface CacheEntry<T> {
 
 class ServerCache {
   private cache: Map<string, CacheEntry<any>> = new Map();
+  del: any;
   
   get<T>(key: string, maxAgeMs: number): T | null {
     const entry = this.cache.get(key);
