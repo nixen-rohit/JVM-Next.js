@@ -63,7 +63,7 @@ export default function AdminProjectsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black p-4 text-white sm:p-6">
-        <PageHeader totalProjects={null} />
+        <PageHeader totalProjects={null}     />
         <div className="rounded-2xl border border-green-900/40 bg-neutral-900 p-6 shadow-2xl shadow-green-900/10">
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
@@ -82,7 +82,7 @@ export default function AdminProjectsPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-black p-4 text-white sm:p-6">
-        <PageHeader totalProjects={null} />
+        <PageHeader totalProjects={null}   />
         <div className="rounded-xl border border-red-900/30 bg-red-900/10 p-5 text-red-300">
           <p className="font-medium">Error loading projects</p>
           <p className="mt-1 text-sm text-red-400">{error}</p>
@@ -105,7 +105,7 @@ export default function AdminProjectsPage() {
         onReorderClick={() => setShowReorderModal(true)}
       />
 
-  
+
 
       {/* Empty state */}
       {projects.length === 0 ? (
@@ -184,8 +184,8 @@ function PageHeader({
   totalProjects,
   onReorderClick,
 }: {
-  totalProjects: number | null;
-  onReorderClick: () => void;
+   totalProjects: number | null;
+  onReorderClick?: () => void;  // ✅ Add ? to make it optional
 }) {
   return (
     <div className="mb-6 flex flex-wrap items-start justify-between gap-3 sm:mb-8">
@@ -203,7 +203,9 @@ function PageHeader({
           </div>
         )}
 
-        {/* ✅ Add Reorder Button */}
+          {onReorderClick && totalProjects !== null && totalProjects > 0 && (
+
+       
         <button
           onClick={onReorderClick}
           className="inline-flex items-center gap-2 rounded-lg border border-green-700/40 bg-green-900/20 px-4 py-2.5 text-sm font-medium text-green-600 transition hover:bg-green-800/30 hover:text-green-300"
@@ -223,6 +225,8 @@ function PageHeader({
           </svg>
           Reorder
         </button>
+
+        )}
 
         <Link
           href="/admin/projects/new"
