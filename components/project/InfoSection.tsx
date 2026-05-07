@@ -3,6 +3,13 @@
 
 import { DownloadButton } from './DownloadButton';
 
+import { Inter } from 'next/font/google';
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+});
+
 interface InfoSectionProps {
   title?: string;
   descriptions: string[];
@@ -29,14 +36,14 @@ export function InfoSection({ title, descriptions, downloads = [], onDownload }:
   if (!hasDownloads) {
     return (
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="max-w-4xl mx-auto text-center">
+        <div className="max-w-4xl mx-auto ">
           {title && (
-            <h2 className="text-3xl lg:text-5xl font-serif mb-6 leading-tight  ">
+            <h2 className="text-3xl lg:text-5xl font-serif mb-6 leading-tight text-center  ">
               {title}
             </h2>
           )}
           {descriptions.map((desc, idx) => (
-            <p key={idx} className="text-gray-600 mb-4 text-base lg:text-lg text-left">
+            <p key={idx} className={`${inter.className} text-gray-600 mb-4 text-base  text-left `}>
               {desc}
             </p>
           ))}
@@ -56,7 +63,7 @@ export function InfoSection({ title, descriptions, downloads = [], onDownload }:
           </h2>
         )}
         {descriptions.map((desc, idx) => (
-          <p key={idx} className="text-gray-600 mb-4 text-base  lg:text-lg">
+          <p key={idx} className={`${inter.className} text-gray-600 mb-4 text-base lg:text-lg`}>
             {desc}
           </p>
         ))}
