@@ -9,7 +9,7 @@ import Link from "next/link";
 const properties = [
   {
     id: "shyam-vihar-project",
-    title: "Shyam Vihar Samota Ka Bass",
+    title: "Shyam Vihar NH-52 Jaipur Sikar Highway",
     description:
       "A modern gated community designed for comfortable living with well-planned plots, wide blacktop roads, street lights, water facilities, and secure surroundings. Build your dream home in a premium and peaceful location.",
     image: "/SamotaKaBass.jpeg",
@@ -17,7 +17,7 @@ const properties = [
 
   {
     id: "shyam-vihar-2",
-    title: "Shyam Vihar 2 Aloda Palsana Road",
+    title: "Shyam Vihar Mahalaxmi Temple",
     description:
       "Shyam Vihar 2 is a well-developed residential plotting project designed for comfortable living and smart investment. With organized plots, wide roads, street lighting, and essential amenities, it offers the ideal blend of convenience and community living.",
     image: "/shyamviharaloda.jpeg",
