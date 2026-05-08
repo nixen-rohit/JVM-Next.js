@@ -219,10 +219,36 @@ export default function EditHeroSlide() {
     });
   }, []);
 
+  // Update the validateImageFile function
+  const validateImageFile = (
+    file: File,
+  ): { valid: boolean; error?: string } => {
+    // 1. Check file type
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+    if (!allowedTypes.includes(file.type)) {
+      return {
+        valid: false,
+        error: `Unsupported file type: ${file.type}. Please upload JPEG, PNG, or WebP images only.`,
+      };
+    }
+
+    // 2. STRICT Check file size - MAX 2MB
+    const maxSizeMB = 2;
+    const fileSizeMB = file.size / (1024 * 1024);
+    if (fileSizeMB > maxSizeMB) {
+      return {
+        valid: false,
+        error: `Image too large (${fileSizeMB.toFixed(1)}MB). Maximum size is ${maxSizeMB}MB.`,
+      };
+    }
+
+    return { valid: true };
+  };
   // Add this helper function inside your component or import from lib
+  // In validateAndCompressImage function
   const validateAndCompressImage = async (
     file: File,
-    maxSizeMB: number = 1,
+    maxSizeMB: number = 2, // Changed from 1 to 2
   ): Promise<{ success: boolean; file?: File; error?: string }> => {
     const fileSizeMB = file.size / (1024 * 1024);
 
@@ -230,7 +256,7 @@ export default function EditHeroSlide() {
       // Try to compress
       try {
         const options = {
-          maxSizeMB: maxSizeMB - 0.1, // Slightly under limit
+          maxSizeMB: maxSizeMB - 0.1, // Target slightly under 2MB
           maxWidthOrHeight: 1920,
           useWebWorker: true,
           initialQuality: 0.85,
@@ -242,7 +268,7 @@ export default function EditHeroSlide() {
         if (compressedSizeMB > maxSizeMB) {
           return {
             success: false,
-            error: `Image too large (${fileSizeMB.toFixed(1)}MB). Please upload an image smaller than ${maxSizeMB}MB or manually compress it.`,
+            error: `Image too large (${fileSizeMB.toFixed(1)}MB). Please upload an image smaller than ${maxSizeMB}MB.`,
           };
         }
 
@@ -266,7 +292,6 @@ export default function EditHeroSlide() {
       const compressedFile = await imageCompression(file, options);
       return { success: true, file: compressedFile };
     } catch (error) {
-      // If compression fails, use original
       return { success: true, file };
     }
   };
@@ -279,12 +304,18 @@ export default function EditHeroSlide() {
       alert("Please upload a valid image file");
       return;
     }
+// ✅ Add validation first
+  const validation = validateImageFile(file);
+  if (!validation.valid) {
+    alert(validation.error);
+    return;
+  }
 
     setIsProcessingImage(true);
 
     try {
       // Compress ONCE
-      const result = await validateAndCompressImage(file, 1);
+      const result = await validateAndCompressImage(file, 2);
 
       if (!result.success || !result.file) {
         throw new Error(result.error || "Failed to process image");
@@ -314,7 +345,7 @@ export default function EditHeroSlide() {
       alert(
         error instanceof Error
           ? error.message
-          : "Failed to process image. Please try a smaller image (max 1MB).",
+          : "Failed to process image. Please try a smaller image (max 2MB).",
       );
     } finally {
       setIsProcessingImage(false);
@@ -350,45 +381,44 @@ export default function EditHeroSlide() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-
   // Add this function before handleSave
-const compressAndConvertToBase64 = async (file: File): Promise<string> => {
-  try {
-    // Compression options
-    const options = {
-      maxSizeMB: 0.8, // Target under 1MB
-      maxWidthOrHeight: 1920,
-      useWebWorker: true,
-      fileType: file.type,
-    };
+  const compressAndConvertToBase64 = async (file: File): Promise<string> => {
+    try {
+      // Compression options
+      const options = {
+        maxSizeMB: 0.8, // Target under 1MB
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        fileType: file.type,
+      };
 
-    // Compress the image
-    const compressedFile = await imageCompression(file, options);
+      // Compress the image
+      const compressedFile = await imageCompression(file, options);
 
-    console.log('🗜️ Compression:', {
-      original: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-      compressed: `${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`,
-      saved: `${(((file.size - compressedFile.size) / file.size) * 100).toFixed(1)}%`,
-    });
+      console.log("🗜️ Compression:", {
+        original: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+        compressed: `${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`,
+        saved: `${(((file.size - compressedFile.size) / file.size) * 100).toFixed(1)}%`,
+      });
 
-    // Convert compressed file to Base64
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(compressedFile);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-  } catch (error) {
-    console.error('❌ Compression failed, falling back to original:', error);
-    // Fallback: compress failed, use original file
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-  }
-};
+      // Convert compressed file to Base64
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(compressedFile);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+      });
+    } catch (error) {
+      console.error("❌ Compression failed, falling back to original:", error);
+      // Fallback: compress failed, use original file
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+      });
+    }
+  };
 
   // ─────────────────────────────────────────────────────────────
   // 🔘 BUTTON HANDLERS (Fix #2 & #3: Safety checks)
@@ -467,149 +497,172 @@ const compressAndConvertToBase64 = async (file: File): Promise<string> => {
     });
   }, []);
 
- 
-const handleSave = async () => {
-  if (isSaving || !slide || isFallback) {
-    console.log('Save prevented:', { isSaving, hasSlide: !!slide, isFallback });
-    return;
-  }
-
-  setIsSaving(true);
-  setSaveError(null);
-  setSaveSuccess(false);
-
-  try {
-    // Validate button links and text before sending
-    const normalized = normalizeSlide(slide);
-
-
-    
-    for (const btn of normalized.buttons) {
-      if (!btn.link || (!btn.link.startsWith('/') && !btn.link.startsWith('http') && btn.link !== '#')) {
-        throw new Error(`Invalid button link: ${btn.link}`);
-      }
-      if (!btn.text || btn.text.trim().length === 0) {
-        throw new Error('Button text cannot be empty');
-      }
+  const handleSave = async () => {
+    if (isSaving || !slide || isFallback) {
+      console.log("Save prevented:", {
+        isSaving,
+        hasSlide: !!slide,
+        isFallback,
+      });
+      return;
     }
 
-    // 🖼️ IMAGE HANDLING: Convert to Base64 for BLOB storage
-    let imageData: string | null = null;
-    
-    if (normalized.useImage) {
-      if (normalized.imageFile) {
-        // New image uploaded - compress and convert to Base64
-        imageData = await compressAndConvertToBase64(normalized.imageFile);
-      } else if (normalized.imageUrl && normalized.imageUrl.startsWith('data:image')) {
-        // Already a Base64 string (from previous save or preview)
-        imageData = normalized.imageUrl;
-      } else if (normalized.imageUrl && !normalized.imageUrl.startsWith('data:image')) {
-        // This is a URL from server (shouldn't happen for new uploads, but keep for compatibility)
-        // For existing slides, we don't need to send the image again
-        imageData = null;
+    setIsSaving(true);
+    setSaveError(null);
+    setSaveSuccess(false);
+
+    try {
+      // Validate button links and text before sending
+      const normalized = normalizeSlide(slide);
+
+      for (const btn of normalized.buttons) {
+        if (
+          !btn.link ||
+          (!btn.link.startsWith("/") &&
+            !btn.link.startsWith("http") &&
+            btn.link !== "#")
+        ) {
+          throw new Error(`Invalid button link: ${btn.link}`);
+        }
+        if (!btn.text || btn.text.trim().length === 0) {
+          throw new Error("Button text cannot be empty");
+        }
       }
+
+      // 🖼️ IMAGE HANDLING: Convert to Base64 for BLOB storage
+      let imageData: string | null = null;
+
+      if (normalized.useImage) {
+        if (normalized.imageFile) {
+          // New image uploaded - compress and convert to Base64
+          imageData = await compressAndConvertToBase64(normalized.imageFile);
+        } else if (
+          normalized.imageUrl &&
+          normalized.imageUrl.startsWith("data:image")
+        ) {
+          // Already a Base64 string (from previous save or preview)
+          imageData = normalized.imageUrl;
+        } else if (
+          normalized.imageUrl &&
+          !normalized.imageUrl.startsWith("data:image")
+        ) {
+          // This is a URL from server (shouldn't happen for new uploads, but keep for compatibility)
+          // For existing slides, we don't need to send the image again
+          imageData = null;
+        }
+      }
+
+      // Prepare payload matching API expectations
+      const payload = {
+        id: normalized.id,
+        useImage: normalized.useImage,
+        imageData: imageData, // ⚠️ Note: field name is 'imageData', not 'imageUrl'
+        imageAlt: normalized.imageAlt,
+        showHeading: normalized.showHeading,
+        heading: normalized.heading,
+        showTag: normalized.showTag,
+        tag: normalized.tag,
+        showButtons: normalized.showButtons,
+        buttonCount: normalized.buttonCount,
+        buttons: normalized.buttons.map((btn) => ({
+          text: btn.text,
+          link: btn.link,
+          variant: btn.variant,
+        })),
+        isActive: normalized.isActive,
+        sortOrder: normalized.sortOrder,
+      };
+
+      console.log("Saving payload:", {
+        ...payload,
+        imageData: payload.imageData
+          ? `${payload.imageData.substring(0, 100)}...`
+          : null,
+      });
+
+      const isNew = isNewSlide;
+      const method = isNew ? "POST" : "PUT";
+      const url = isNew
+        ? "/api/hero-slides"
+        : `/api/hero-slides?id=${normalized.id}`;
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("API Error Response:", error);
+        throw new Error(error.error || error.details || "Failed to save slide");
+      }
+
+      const saved: Slide = await response.json();
+
+      // Map response back to SlideConfig
+      const savedConfig: SlideConfig = {
+        id: saved.id,
+        imageFile: null,
+        imagePreview: null,
+        useImage: saved.useImage ?? true,
+        imageUrl: saved.imageUrl ?? null,
+        imageAlt: saved.imageAlt ?? "Hero slide",
+        showHeading: saved.showHeading ?? true,
+        heading: saved.heading ?? "",
+        showTag: saved.showTag ?? true,
+        tag: saved.tag ?? "",
+        showButtons: saved.showButtons ?? true,
+        buttonCount: (saved.buttonCount === 0
+          ? 1
+          : (saved.buttonCount ?? 1)) as 1 | 2,
+        buttons: saved.buttons?.length
+          ? saved.buttons.map((btn) => ({
+              text: btn.text ?? "",
+              link: btn.link ?? "#",
+              variant: btn.variant ?? "primary",
+            }))
+          : [{ text: "About Us", link: "/about", variant: "primary" }],
+        isActive: saved.isActive ?? true,
+        sortOrder: saved.sortOrder ?? 0,
+      };
+
+      setSlide(normalizeSlide(savedConfig));
+      // After save success
+      setSaveSuccess(true);
+
+      // Dispatch event to notify main site to refresh immediately
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("hero-slides-updated", {
+            detail: { timestamp: Date.now() },
+          }),
+        );
+      }
+
+      // Redirect
+      setTimeout(() => {
+        router.push("/admin/hero-slides");
+        router.refresh();
+      }, 1200);
+
+      console.log("Sending to API:", {
+        method,
+        url,
+        hasImageData: !!payload.imageData,
+        imageDataLength: payload.imageData?.length,
+        useImage: payload.useImage,
+        buttonCount: payload.buttonCount,
+      });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "An unexpected error occurred";
+      console.error("Save error:", err);
+      setSaveError(message);
+    } finally {
+      setIsSaving(false);
     }
-
-    // Prepare payload matching API expectations
-    const payload = {
-      id: normalized.id,
-      useImage: normalized.useImage,
-      imageData: imageData, // ⚠️ Note: field name is 'imageData', not 'imageUrl'
-      imageAlt: normalized.imageAlt,
-      showHeading: normalized.showHeading,
-      heading: normalized.heading,
-      showTag: normalized.showTag,
-      tag: normalized.tag,
-      showButtons: normalized.showButtons,
-      buttonCount: normalized.buttonCount,
-      buttons: normalized.buttons.map(btn => ({
-        text: btn.text,
-        link: btn.link,
-        variant: btn.variant
-      })),
-      isActive: normalized.isActive,
-      sortOrder: normalized.sortOrder,
-    };
-
-    console.log('Saving payload:', { 
-      ...payload, 
-      imageData: payload.imageData ? `${payload.imageData.substring(0, 100)}...` : null 
-    });
-
-    
-
-    const isNew = isNewSlide;
-    const method = isNew ? "POST" : "PUT";
-    const url = isNew
-      ? "/api/hero-slides"
-      : `/api/hero-slides?id=${normalized.id}`;
-
-    const response = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      console.error('API Error Response:', error);
-      throw new Error(error.error || error.details || "Failed to save slide");
-    }
-
-    const saved: Slide = await response.json();
-
-    // Map response back to SlideConfig
-    const savedConfig: SlideConfig = {
-      id: saved.id,
-      imageFile: null,
-      imagePreview: null,
-      useImage: saved.useImage ?? true,
-      imageUrl: saved.imageUrl ?? null,
-      imageAlt: saved.imageAlt ?? "Hero slide",
-      showHeading: saved.showHeading ?? true,
-      heading: saved.heading ?? "",
-      showTag: saved.showTag ?? true,
-      tag: saved.tag ?? "",
-      showButtons: saved.showButtons ?? true,
-      buttonCount: (saved.buttonCount === 0 ? 1 : (saved.buttonCount ?? 1)) as 1 | 2,
-      buttons: saved.buttons?.length
-        ? saved.buttons.map((btn) => ({
-            text: btn.text ?? "",
-            link: btn.link ?? "#",
-            variant: btn.variant ?? "primary",
-          }))
-        : [{ text: "About Us", link: "/about", variant: "primary" }],
-      isActive: saved.isActive ?? true,
-      sortOrder: saved.sortOrder ?? 0,
-    };
-
-    setSlide(normalizeSlide(savedConfig));
-    setSaveSuccess(true);
-
-    // Invalidate cache by refreshing
-    setTimeout(() => {
-      router.push('/admin/hero-slides');
-      router.refresh();
-    }, 1200);
-
-
-    console.log('Sending to API:', {
-  method,
-  url,
-  hasImageData: !!payload.imageData,
-  imageDataLength: payload.imageData?.length,
-  useImage: payload.useImage,
-  buttonCount: payload.buttonCount,
-});
-    
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "An unexpected error occurred";
-    console.error("Save error:", err);
-    setSaveError(message);
-  } finally {
-    setIsSaving(false);
-  }
-};
+  };
 
   // 🔴 UPDATED: Delete with beautiful modal (no NODE_ENV check)
   const openDeleteConfirm = () => setShowDeleteConfirm(true);
@@ -682,7 +735,7 @@ const handleSave = async () => {
   return (
     <div className="min-h-screen bg-black text-white font-sans">
       {/* Header */}
-      <header className="border-b border-green-700/50 bg-black/50 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-green-700/50 bg-black/50 backdrop-blur-sm sticky top-0  ">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
@@ -917,7 +970,7 @@ const handleSave = async () => {
                             </p>
                             {slide.useImage && (
                               <p className="text-xs text-zinc-500 mt-1">
-                                16:9 recommended • Max 1MB (automatically
+                                16:9 recommended • Max 2MB (automatically
                                 compressed)
                               </p>
                             )}

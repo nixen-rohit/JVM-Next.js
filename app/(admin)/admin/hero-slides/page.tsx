@@ -62,8 +62,11 @@ export default function HeroSlidesList() {
 
   const handleCreateNew = () => {
     router.push("/admin/hero-slides/new");
+    // Dispatch event to refresh when returning
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("hero-slides-updated"));
+    }
   };
-
   // Loading State
   if (isLoading) {
     return (
@@ -97,7 +100,7 @@ export default function HeroSlidesList() {
   return (
     <div className="min-h-screen bg-black text-white font-sans">
       {/* Header */}
-      {/* Header */}
+
       <header className="border-b border-green-700/50 bg-black/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl md:text-2xl font-bold text-white">
@@ -106,7 +109,7 @@ export default function HeroSlidesList() {
 
           <div className="flex items-center gap-4">
             {/* Slide Stats */}
-          
+
             <div className="hidden sm:flex items-center px-5 py-2 rounded-2xl bg-[#0b0f0d] border border-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.08)]">
               <p className="text-base font-semibold text-white">
                 Total:{" "}
@@ -177,14 +180,26 @@ export default function HeroSlidesList() {
                         </p>
                       </div>
                     </div>
-                  ) : slide.useImage && slide.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <Image
-                      width={400}
-                      height={400}
-                      src={slide.imageUrl}
+                  ) : slide.useImage ? (
+                    // ✅ Use the new image endpoint
+                    <img
+                      src={`/api/hero-image/${slide.id}?device=desktop&v=${slide.version || 1}&t=${Date.now()}`}
                       alt={slide.imageAlt || "Slide preview"}
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        // If image fails to load, show fallback
+                        e.currentTarget.style.display = "none";
+                        const parent = e.currentTarget.parentElement;
+                        if (parent) {
+                          const fallback = document.createElement("div");
+                          fallback.className =
+                            "absolute inset-0 bg-linear-to-br from-zinc-800 via-zinc-900 to-green-950 flex items-center justify-center";
+                          fallback.innerHTML =
+                            '<span class="text-zinc-600 text-sm">No Image</span>';
+                          parent.appendChild(fallback);
+                        }
+                      }}
                     />
                   ) : (
                     <div className="absolute inset-0 bg-linear-to-br from-zinc-800 via-zinc-900 to-green-950 flex items-center justify-center">
@@ -197,9 +212,10 @@ export default function HeroSlidesList() {
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                       <Link
                         href={`/admin/hero-slides/${slide.id}`}
-                        className="px-3 py-1.5 bg-green-700 text-white text-sm font-medium rounded-lg flex items-center gap-1"
+                        className="flex justify-center items-center  p-2 bg-green-700 hover:bg-green-600 rounded-lg transition-colors z-10"
+                        title="Edit slide"
                       >
-                        <GoPencil size={14} /> Edit
+                        <GoPencil size={16} />
                       </Link>
                     </div>
                   )}

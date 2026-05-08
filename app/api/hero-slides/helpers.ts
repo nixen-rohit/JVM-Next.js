@@ -6,8 +6,8 @@ import type { ButtonConfig } from '@/types/slides';
 export interface SlideRow extends RowDataPacket {
   id: string;
   use_image: number;
-  image_data: Buffer | null;
-  image_mime_type: string | null;
+  // image_data: Buffer | null;
+  // image_mime_type: string | null;
   image_alt: string;
   show_heading: number;
   heading: string | null;
@@ -61,15 +61,10 @@ export function rowToSlide(row: SlideRow): any {
     });
   }
 
-  let imageUrl = null;
-  if (row.image_data && row.image_mime_type) {
-    imageUrl = bufferToBase64(row.image_data, row.image_mime_type);
-  }
-
+  // Return WITHOUT imageUrl (images come from separate endpoint)
   return {
     id: row.id,
     useImage: row.use_image === 1,
-    imageUrl,
     imageAlt: row.image_alt,
     showHeading: row.show_heading === 1,
     heading: row.heading,
@@ -80,6 +75,7 @@ export function rowToSlide(row: SlideRow): any {
     buttons,
     isActive: row.is_active === 1,
     sortOrder: row.sort_order,
+    version: row.version || 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

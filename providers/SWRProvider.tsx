@@ -7,7 +7,7 @@ import { SWRConfig } from 'swr';
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 const adminConfig  = {
-  revalidateOnFocus: false,        // Don't refetch when tab gains focus
+  revalidateOnFocus: false,        // Don't refeatch when tab gains focus
   revalidateOnReconnect: false,    // Don't refetch on network reconnect
   revalidateIfStale: false,        // Don't auto-refresh stale data
   dedupingInterval: 60000,         // Dedupe requests within 60 seconds

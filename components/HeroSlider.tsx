@@ -1,32 +1,29 @@
-//app/components/HeroSlider.tsx
-
+// components/HeroSlider.tsx
 "use client";
 
-import { useState, useEffect, memo } from "react";
+import { useState, useEffect, memo, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { GoDotFill } from "react-icons/go";
 import Loader from "./Loader";
-import type { Slide } from "@/types/slides";
-
+import { useHeroSlides } from "@/hooks/useHeroSlides";
 import {
   FALLBACK_SLIDE,
   isFallbackSlide,
   getDisplaySlides,
 } from "@/lib/fallback-slide";
 
-interface HeroSliderProps {
-  slides?: Slide[];
-}
-
 const SLIDE_DURATION = 6000;
 
-
-// Add memo for slide content to prevent unnecessary re-renders
-const SlideContent = memo(({ slide, isActive }: { slide: Slide; isActive: boolean }) => {
+// Memoized slide content
+const SlideContent = memo(({ slide, isActive }: { slide: any; isActive: boolean }) => {
   if (!isActive) return null;
   
   const isFallback = isFallbackSlide(slide);
+  
+  // Build image URLs with version for cache busting
+  const desktopImageUrl = `/api/hero-image/${slide.id}?device=desktop&v=${slide.version || 1}`;
+  const mobileImageUrl = `/api/hero-image/${slide.id}?device=mobile&v=${slide.version || 1}`;
   
   return (
     <>
@@ -41,38 +38,18 @@ const SlideContent = memo(({ slide, isActive }: { slide: Slide; isActive: boolea
             </p>
           </div>
         </div>
-      ) : slide.useImage && slide.imageUrl ? (
-        slide.imageUrl.startsWith("data:image") ? (
-          <div className="absolute inset-0 bg-linear-to-br from-zinc-900 via-black to-green-950">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={slide.imageUrl}
-              alt={slide.imageAlt}
-              role="img"
-              draggable={false}
-              className="absolute inset-0 w-full h-full object-cover object-center opacity-0 animate-fade-in"
-              loading="eager"
-              decoding="async"
-              onLoad={(e) => e.currentTarget.classList.remove("opacity-0")}
-              onError={(e) => {
-                console.warn("Failed to load Base64 image:", slide.id);
-                e.currentTarget.style.display = "none";
-              }}
-            />
-          </div>
-        ) : (
-          <Image
-            src={slide.imageUrl}
+      ) : (
+        <picture>
+          <source media="(max-width: 768px)" srcSet={mobileImageUrl} />
+          <img
+            src={desktopImageUrl}
             alt={slide.imageAlt}
-            fill
-            priority={true}
+            
             className="object-cover object-center"
             sizes="100vw"
             draggable={false}
           />
-        )
-      ) : (
-        <div className="absolute inset-0 bg-linear-to-br from-zinc-900 via-black to-green-950" />
+        </picture>
       )}
       
       <div className="absolute inset-0 bg-black/40" />
@@ -84,46 +61,31 @@ const SlideContent = memo(({ slide, isActive }: { slide: Slide; isActive: boolea
 
 SlideContent.displayName = 'SlideContent';
 
-export default function HeroSlider({ slides: propSlides }: HeroSliderProps) {
-  const [slides, setSlides] = useState<Slide[]>(propSlides || []);
+export default function HeroSlider() {
+  const { slides: fetchedSlides, isLoading, refreshSlides } = useHeroSlides();
+  const [slides, setSlides] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(!propSlides);
+  const previousSlidesRef = useRef<string>(''); // Track slides by JSON string
 
+  // Update slides when fetched data changes - FIXED infinite loop
   useEffect(() => {
-    if (!propSlides) {
-      const abortController = new AbortController();
-
-      const fetchSlides = async () => {
-        try {
-          const response = await fetch("/api/hero-slides", {
-            signal: abortController.signal,
-          });
-          if (response.ok) {
-            const data = await response.json();
-            setSlides(getDisplaySlides(data.slides || []));
-            setCurrentIndex(0);
-          }
-        } catch (error) {
-          if (error instanceof Error && error.name !== "AbortError") {
-            console.error("Failed to fetch slides:", error);
-            setSlides([FALLBACK_SLIDE]);
-          }
-        } finally {
-          if (!abortController.signal.aborted) {
-            setIsLoading(false);
-          }
-        }
-      };
-
-      fetchSlides();
-      return () => abortController.abort(); // Cleanup
-    } else {
-      setSlides(getDisplaySlides(propSlides));
-      setCurrentIndex(0);
-      setIsLoading(false);
+    const displaySlides = getDisplaySlides(fetchedSlides || []);
+    
+    // Compare by JSON string to prevent infinite updates
+    const slidesKey = JSON.stringify(displaySlides.map(s => s.id));
+    
+    if (previousSlidesRef.current !== slidesKey) {
+      previousSlidesRef.current = slidesKey;
+      setSlides(displaySlides);
+      
+      // Reset index if slides change and current index is out of bounds
+      if (displaySlides.length > 0 && currentIndex >= displaySlides.length) {
+        setCurrentIndex(0);
+      }
     }
-  }, [propSlides]);
+  }, [fetchedSlides, currentIndex]); // currentIndex is needed but won't cause infinite loop now
 
+  // Auto-advance slides
   useEffect(() => {
     if (slides.length <= 1) return;
 
@@ -164,62 +126,7 @@ export default function HeroSlider({ slides: propSlides }: HeroSliderProps) {
             }}
             className="absolute inset-0"
           >
-            {isFallback ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-black via-zinc-900 to-black">
-                <div className="text-center px-6 max-w-2xl">
-                  <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white/90 mb-4">
-                    {currentSlide.heading}
-                  </h1>
-                  <p className="text-zinc-400 text-base sm:text-lg">
-                    Check back soon for exciting new projects.
-                  </p>
-                </div>
-              </div>
-            ) : currentSlide.useImage && currentSlide.imageUrl ? (
-              // 🖼️ Check if imageUrl is a Base64 data URI
-              currentSlide.imageUrl.startsWith("data:image") ? (
-                // Base64/BLOB image: use standard <img> tag
-                <div className="absolute inset-0 bg-linear-to-br from-zinc-900 via-black to-green-950">
-                  <img
-                    src={currentSlide.imageUrl}
-                    alt={currentSlide.imageAlt}
-                    role="img"
-                    draggable={false}
-                    className="absolute inset-0 w-full h-full object-cover object-center opacity-0 animate-fade-in"
-                    loading={currentIndex === 0 ? "eager" : "lazy"}
-                    decoding={currentIndex === 0 ? "sync" : "async"}
-                    fetchPriority={currentIndex === 0 ? "high" : "auto"}
-                    onLoad={(e) =>
-                      e.currentTarget.classList.remove("opacity-0")
-                    }
-                    onError={(e) => {
-                      console.warn(
-                        "⚠️ Failed to load Base64 image:",
-                        currentSlide.id,
-                      );
-                      e.currentTarget.style.display = "none";
-                    }}
-                  />
-                </div>
-              ) : (
-                // External URL: use Next.js Image for optimization
-                <Image
-                  src={currentSlide.imageUrl}
-                  alt={currentSlide.imageAlt}
-                  fill
-                  priority={currentIndex === 0}
-                  className="object-cover object-center"
-                  sizes="100vw"
-                  draggable={false}
-                />
-              )
-            ) : (
-              <div className="absolute inset-0 bg-linear-to-br from-zinc-900 via-black to-green-950" />
-            )}
-
-            <div className="absolute inset-0 bg-black/40" />
-            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t from-black/80 to-transparent" />
-            <div className="absolute inset-x-0 top-0 h-1/3 bg-linear-to-b from-black/50 to-transparent" />
+            <SlideContent slide={currentSlide} isActive={true} />
           </motion.div>
         </AnimatePresence>
       </div>
@@ -237,7 +144,7 @@ export default function HeroSlider({ slides: propSlides }: HeroSliderProps) {
               className="max-w-4xl text-center space-y-4 sm:space-y-5"
             >
               {currentSlide.showHeading && currentSlide.heading && (
-                <h1 className="text-5xl md:text-7xl lg:text-8xl  font-serif font-extrabold tracking-wide text-white drop-shadow-xl leading-tight">
+                <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif font-extrabold tracking-wide text-white drop-shadow-xl leading-tight">
                   {currentSlide.heading}
                 </h1>
               )}
@@ -253,7 +160,7 @@ export default function HeroSlider({ slides: propSlides }: HeroSliderProps) {
                 <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center items-center">
                   {currentSlide.buttons
                     .slice(0, currentSlide.buttonCount)
-                    .map((btn, index) => (
+                    .map((btn: any, index: number) => (
                       <motion.a
                         key={index}
                         href={btn.link}

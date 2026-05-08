@@ -71,6 +71,27 @@ CREATE TABLE IF NOT EXISTS slides (
 )
 
 
+-- Drop old slide_images if exists, then create new structure
+CREATE TABLE IF NOT EXISTS slide_images (
+  id VARCHAR(36) PRIMARY KEY,
+  slide_id VARCHAR(36) NOT NULL,
+  device_type ENUM('desktop', 'mobile') NOT NULL,
+  image_data MEDIUMBLOB NOT NULL,  -- ✅ MEDIUMBLOB, not LONGBLOB
+  mime_type VARCHAR(50) NOT NULL,
+  blur_data TEXT,  -- ✅ Base64 blur placeholder
+  width INT,
+  height INT,
+  version INT DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (slide_id) REFERENCES slides(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_slide_device (slide_id, device_type),
+  INDEX idx_slide_device (slide_id, device_type)
+);
+
+-- Remove old image columns from slides table
+ALTER TABLE slides DROP COLUMN image_data;
+ALTER TABLE slides DROP COLUMN image_mime_type;
+
  
  
 

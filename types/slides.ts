@@ -9,16 +9,15 @@ export interface ButtonConfig {
 export interface Slide {
   id: string;
   useImage: boolean;
-  imageUrl: string | null; // External URL or file path
+  imageUrl: string | null;  
   imageAlt: string;
-  
-  // 🔹 SERVER-ONLY: Binary image data from MySQL
-  // Use imageBase64 for client rendering
+    version?: number; 
+   
   imageBlob?: Buffer | Uint8Array | null;
-  imageMimeType?: string | null; // e.g., "image/jpeg"
+  imageMimeType?: string | null; 
   
-  // 🔹 CLIENT-SAFE: Base64 data URI for <img> or next/image
-  imageBase64?: string | null; // "data:image/jpeg;base64,..."
+  
+  imageBase64?: string | null;  
   
   showHeading: boolean;
   heading: string | null;
