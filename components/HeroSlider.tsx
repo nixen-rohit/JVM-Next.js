@@ -12,72 +12,77 @@ import {
   isFallbackSlide,
   getDisplaySlides,
 } from "@/lib/fallback-slide";
+ 
 
-const SLIDE_DURATION = 6000;
+const SLIDE_DURATION = 7000;
 
 // Memoized slide content
-const SlideContent = memo(({ slide, isActive }: { slide: any; isActive: boolean }) => {
-  if (!isActive) return null;
-  
-  const isFallback = isFallbackSlide(slide);
-  
-  // Build image URLs with version for cache busting
-  const desktopImageUrl = `/api/hero-image/${slide.id}?device=desktop&v=${slide.version || 1}`;
-  const mobileImageUrl = `/api/hero-image/${slide.id}?device=mobile&v=${slide.version || 1}`;
-  
-  return (
-    <>
-      {isFallback ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-black via-zinc-900 to-black">
-          <div className="text-center px-6 max-w-2xl">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white/90 mb-4">
-              {slide.heading}
-            </h1>
-            <p className="text-zinc-400 text-base sm:text-lg">
-              Check back soon for exciting new projects.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <picture>
-          <source media="(max-width: 768px)" srcSet={mobileImageUrl} />
-          <img
-            src={desktopImageUrl}
-            alt={slide.imageAlt}
-            
-            className="object-cover object-center"
-            sizes="100vw"
-            draggable={false}
-          />
-        </picture>
-      )}
-      
-      <div className="absolute inset-0 bg-black/40" />
-      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t from-black/80 to-transparent" />
-      <div className="absolute inset-x-0 top-0 h-1/3 bg-linear-to-b from-black/50 to-transparent" />
-    </>
-  );
-});
+const SlideContent = memo(
+  ({ slide, isActive }: { slide: any; isActive: boolean }) => {
+    if (!isActive) return null;
 
-SlideContent.displayName = 'SlideContent';
+    const isFallback = isFallbackSlide(slide);
+
+    // Build image URLs with version for cache busting
+    const desktopImageUrl = `/api/hero-image/${slide.id}?device=desktop&v=${slide.version || 1}`;
+    const mobileImageUrl = `/api/hero-image/${slide.id}?device=mobile&v=${slide.version || 1}`;
+
+    return (
+      <>
+        {isFallback ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-black via-zinc-900 to-black">
+            <div className="text-center px-6 max-w-2xl">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white/90 mb-4">
+                {slide.heading}
+              </h1>
+              <p className="text-zinc-400 text-base sm:text-lg">
+                Check back soon for exciting new projects.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <picture>
+            <source media="(max-width: 768px)" srcSet={mobileImageUrl} />
+            <img
+              src={desktopImageUrl}
+              alt={slide.imageAlt}
+              sizes="100vw"
+              draggable={false}
+              className="absolute inset-0 w-full h-full object-cover object-center opacity-0 animate-fade-in"
+              loading="eager"
+              decoding="async"
+              
+            />
+          </picture>
+        )}
+
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t from-black/80 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-1/3 bg-linear-to-b from-black/50 to-transparent" />
+      </>
+    );
+  },
+);
+
+SlideContent.displayName = "SlideContent";
 
 export default function HeroSlider() {
   const { slides: fetchedSlides, isLoading, refreshSlides } = useHeroSlides();
   const [slides, setSlides] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const previousSlidesRef = useRef<string>(''); // Track slides by JSON string
+  const previousSlidesRef = useRef<string>(""); // Track slides by JSON string
 
   // Update slides when fetched data changes - FIXED infinite loop
   useEffect(() => {
     const displaySlides = getDisplaySlides(fetchedSlides || []);
-    
+
     // Compare by JSON string to prevent infinite updates
-    const slidesKey = JSON.stringify(displaySlides.map(s => s.id));
-    
+    const slidesKey = JSON.stringify(displaySlides.map((s) => s.id));
+
     if (previousSlidesRef.current !== slidesKey) {
       previousSlidesRef.current = slidesKey;
       setSlides(displaySlides);
-      
+
       // Reset index if slides change and current index is out of bounds
       if (displaySlides.length > 0 && currentIndex >= displaySlides.length) {
         setCurrentIndex(0);
