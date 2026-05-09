@@ -183,7 +183,7 @@ export default function HeroSlidesList() {
                   ) : slide.useImage ? (
                     // ✅ Use the new image endpoint
                     <img
-                      src={`/api/hero-image/${slide.id}?device=desktop&v=${slide.version || 1}&t=${Date.now()}`}
+                      src={`/api/hero-slides/image/${slide.id}?device=desktop&v=${slide.version || 1}&t=${Date.now()}`}
                       alt={slide.imageAlt || "Slide preview"}
                       className="w-full h-full object-cover"
                       loading="lazy"

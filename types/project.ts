@@ -10,6 +10,7 @@ export type CollageLayout = "modulo-6" | "masonry" | "grid";
 export type PageSectionName =
   | "hero"
   | "info"
+  |"keyFeatures"
   | "stats"
   | "highlight"
   | "media"
@@ -81,6 +82,11 @@ export interface ProjectConfig {
   collage?: {
     showMoreLimit?: number;
     layoutPattern?: CollageLayout;
+  };
+   keyFeatures?: {
+    heading: string;
+    paragraph: string;
+    features: FeatureItem[];
   };
 
   // Allow dynamic keys for flexibility (e.g., future sections)
@@ -177,4 +183,18 @@ export interface ProjectFormState {
 
   // Form validation errors (optional)
   errors?: Record<string, string>;
+}
+
+
+ 
+
+export interface FeatureItem {
+  id: string;
+  text: string;
+}
+
+export interface KeyFeaturesConfig {
+  heading: string;
+  paragraph: string;
+  features: FeatureItem[];
 }

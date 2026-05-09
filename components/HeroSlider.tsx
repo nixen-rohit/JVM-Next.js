@@ -23,8 +23,8 @@ const SlideContent = memo(
     const isFallback = isFallbackSlide(slide);
 
     // Build image URLs with version for cache busting
-    const desktopImageUrl = `/api/hero-image/${slide.id}?device=desktop&v=${slide.version || 1}`;
-    const mobileImageUrl = `/api/hero-image/${slide.id}?device=mobile&v=${slide.version || 1}`;
+    const desktopImageUrl = `/api/hero-slides/image/${slide.id}?device=desktop&v=${slide.version || 1}`;
+    const mobileImageUrl = `/api/hero-slides/image/${slide.id}?device=mobile&v=${slide.version || 1}`;
 
     return (
       <>
@@ -66,7 +66,7 @@ const SlideContent = memo(
 SlideContent.displayName = "SlideContent";
 
 export default function HeroSlider() {
-  const { slides: fetchedSlides, isLoading, } = useHeroSlides();
+  const { slides: fetchedSlides, isLoading,refreshSlides  } = useHeroSlides();
   const [slides, setSlides] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const previousSlidesRef = useRef<string>("");  
@@ -99,6 +99,21 @@ export default function HeroSlider() {
 
     return () => clearInterval(interval);
   }, [slides.length]);
+
+
+  // ✅ Listen for admin updates
+  useEffect(() => {
+    const handleSlidesUpdate = () => {
+      console.log('🔄 Admin updated slides, refreshing...');
+      refreshSlides(); // Force SWR revalidation
+    };
+    
+    window.addEventListener('hero-slides-updated', handleSlidesUpdate);
+    
+    return () => {
+      window.removeEventListener('hero-slides-updated', handleSlidesUpdate);
+    };
+  }, [refreshSlides]);
 
   if (isLoading) {
     return (

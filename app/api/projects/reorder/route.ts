@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbQuery, dbExecute } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
-import { serverCache } from "@/lib/serverCache";
-
+ 
 
 // GET - Fetch all published projects with their sort_order
 export async function GET(request: NextRequest) {
@@ -68,14 +67,11 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Clear the navbar cache
-    if (serverCache.del) {
-      serverCache.del('navbar-projects');
-    }
-
+ 
     return NextResponse.json({
       success: true,
       message: "Project order updated successfully",
+      revalidate: true  // Client can use this to trigger refresh
     });
   } catch (error) {
     console.error("Error updating project order:", error);

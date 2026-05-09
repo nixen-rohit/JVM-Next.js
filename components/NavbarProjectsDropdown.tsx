@@ -1,6 +1,7 @@
 // components/NavbarProjectsDropdown.tsx
 
 "use client";
+import { useEffect } from "react";
 
 import Link from "next/link";
 import { FiMapPin } from "react-icons/fi";
@@ -19,9 +20,22 @@ export default function NavbarProjectsDropdown({
   isMobile = false,
 }: NavbarProjectsDropdownProps) {
   // ✅ Use SWR for automatic caching
-  const { projects, isLoading, error } = useNavbarProjects();
+  const { projects, isLoading, error, refreshProjects } = useNavbarProjects();
 
   const handleClick = () => onClose();
+  // ✅ Listen for project updates from admin
+  useEffect(() => {
+    const handleProjectsUpdate = () => {
+      console.log("🔄 Projects updated, refreshing navbar...");
+      refreshProjects(); // Force SWR revalidation
+    };
+
+    window.addEventListener("projects-updated", handleProjectsUpdate);
+
+    return () => {
+      window.removeEventListener("projects-updated", handleProjectsUpdate);
+    };
+  }, [refreshProjects]);
 
   if (!isOpen) return null;
 
@@ -29,7 +43,10 @@ export default function NavbarProjectsDropdown({
     return (
       <div className={`${isMobile ? "pl-4 space-y-1" : "py-2"} px-4`}>
         {[...Array(3)].map((_, i) => (
-          <div key={i} className={`animate-pulse ${isMobile ? "py-2" : "py-3"}`}>
+          <div
+            key={i}
+            className={`animate-pulse ${isMobile ? "py-2" : "py-3"}`}
+          >
             <div className="flex items-center gap-3">
               <div className="w-4 h-4 bg-gray-200 rounded-full"></div>
               <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -67,7 +84,7 @@ export default function NavbarProjectsDropdown({
         >
           <Link
             href={`/projects/${project.slug}`}
-            prefetch={true}  // ✅ Prefetch on hover
+            prefetch={true} // ✅ Prefetch on hover
             className={`flex items-center ${
               isMobile ? "space-x-3 py-2.5 px-3 text-sm" : "space-x-3 px-4 py-3"
             } hover:bg-amber-50 transition-colors ${

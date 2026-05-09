@@ -10,8 +10,6 @@ import {
   CheckCircle2,
   Link2,
 } from "lucide-react";
-import { markProjectsChanged } from "@/lib/navbarCache"; // ✅ Add this import
-
 
 type FormState = {
   name: string;
@@ -126,10 +124,7 @@ export default function NewProjectPage() {
           if (!retryRes.ok) {
             setSubmitError(retryData.error || "Failed to create project");
             return;
-          }          
-          
-          
-          markProjectsChanged();
+          }
 
           setSuccess(true);
           setTimeout(
@@ -144,19 +139,20 @@ export default function NewProjectPage() {
         } else {
           setSubmitError(data.error || "Failed to create project");
         }
+
+        // ✅ Dispatch event to refresh navbar
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("projects-updated", {
+              detail: { timestamp: Date.now() },
+            }),
+          );
+        }
         return;
       }
 
-
-       // ✅ Invalidate navbar cache when new project is created
-      markProjectsChanged();
-
       setSuccess(true);
       setTimeout(() => {
-        console.log(
-          "🔄 [NEW] Redirecting to:",
-          `/admin/projects/${data.projectId}`,
-        );
         router.push(`/admin/projects/${data.projectId}`);
       }, 1500);
     } catch (err) {
@@ -191,7 +187,7 @@ export default function NewProjectPage() {
       {/* Success Message */}
       {success && (
         <div className="mb-6 rounded-xl border border-green-900/40 bg-black p-4 flex items-start gap-3">
-          <CheckCircle2 className="h-5 w-5 text-green-700 flex-shrink-0 mt-0.5" />
+          <CheckCircle2 className="h-5 w-5 text-green-700 shrink-0 mt-0.5" />
           <div>
             <p className="font-medium text-green-700">
               Project created successfully!
@@ -206,7 +202,7 @@ export default function NewProjectPage() {
       {/* Error Message */}
       {submitError && (
         <div className="mb-6 rounded-xl border border-red-900/30 bg-red-900/10 p-4 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-red-700 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="h-5 w-5 text-red-700 shrink-0 mt-0.5" />
           <div>
             <p className="font-medium text-red-300">Failed to create project</p>
             <p className="text-sm text-red-400">{submitError}</p>
@@ -319,8 +315,9 @@ export default function NewProjectPage() {
               ))}
             </div>
           </div>
+        </div>
 
-          {/* Publish Toggle */}
+        {/* Publish Toggle */}
           <div className="flex items-center justify-between py-4 border-t border-neutral-800">
             <div>
               <p className="text-sm font-medium text-white">Publish to Site</p>
@@ -350,7 +347,9 @@ export default function NewProjectPage() {
               />
             </button>
           </div>
-        </div>
+         
+
+        
 
         {/* Submit Buttons */}
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
@@ -383,26 +382,6 @@ export default function NewProjectPage() {
           </button>
         </div>
       </form>
-
-      {/* Helper Tips */}
-      <div className="mt-8 rounded-xl border border-green-900/40 bg-black p-4">
-        <h4 className="text-sm font-medium text-green-700 mb-2">
-          💡 How slugs Work
-        </h4>
-        <ul className="text-xs text-gray-400 space-y-1">
-          <li>
-            • URL is auto-generated:{" "}
-            <code className="bg-neutral-800 px-1 rounded">
-              /projects/{autoslug || "your-slug"}
-            </code>
-          </li>
-          <li>• Only lowercase letters, numbers, and hyphens are used</li>
-          <li>
-            • If a slug conflicts, we auto-add a short code to keep it unique
-          </li>
-          <li>• You can edit the slug later in project settings if needed</li>
-        </ul>
-      </div>
     </div>
   );
-}
+} 

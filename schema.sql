@@ -31,9 +31,8 @@ CREATE TABLE IF NOT EXISTS slides (
   id VARCHAR(36) PRIMARY KEY,
   
   -- Image configuration (STORED AS BLOB, NOT Base64)
-  use_image BOOLEAN DEFAULT TRUE,
-  image_data LONGBLOB NULL COMMENT 'Raw binary image data',
-  image_mime_type VARCHAR(50) NULL COMMENT 'MIME type like image/jpeg, image/png, image/webp',
+  use_image BOOLEAN DEFAULT TRUE, 
+  
   image_alt VARCHAR(255) DEFAULT 'Hero slide background',
   
   -- Content configuration
@@ -71,7 +70,7 @@ CREATE TABLE IF NOT EXISTS slides (
 )
 
 
--- Drop old slide_images if exists, then create new structure
+- 
 CREATE TABLE IF NOT EXISTS slide_images (
   id VARCHAR(36) PRIMARY KEY,
   slide_id VARCHAR(36) NOT NULL,
@@ -87,10 +86,6 @@ CREATE TABLE IF NOT EXISTS slide_images (
   UNIQUE KEY unique_slide_device (slide_id, device_type),
   INDEX idx_slide_device (slide_id, device_type)
 );
-
--- Remove old image columns from slides table
-ALTER TABLE slides DROP COLUMN image_data;
-ALTER TABLE slides DROP COLUMN image_mime_type;
 
  
  
@@ -140,7 +135,7 @@ CREATE TABLE IF NOT EXISTS project_configs (
 CREATE TABLE IF NOT EXISTS project_files (
   id VARCHAR(36) PRIMARY KEY,
   project_id VARCHAR(36) NOT NULL,
-  section_name ENUM('hero','info','stats','highlight','media','units','collage','location','brochure','document') NOT NULL,
+  section_name ENUM('hero','info','stats','highlight','media','units','collage','location','brochure','document','keyFeatures') NOT NULL,
   file_type ENUM('image','pdf') NOT NULL,
   mime_type VARCHAR(100) NOT NULL,
   file_name VARCHAR(255) NOT NULL,

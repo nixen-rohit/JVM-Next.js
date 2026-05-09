@@ -1,15 +1,12 @@
 // app/(admin)/admin/projects/[id]/page.tsx
 
 "use client";
-import { invalidateProjectCache } from "@/lib/invalidateCache";
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Trash2 } from "lucide-react";
 import { ProjectFormState, SectionName } from "@/types/project";
-
-import { markProjectsChanged } from "@/lib/navbarCache";
 import { compressImage, getFileType } from "@/lib/imageCompression";
 import { BasicInfoTab } from "@/components/admin/ProjectForm/BasicInfoTab";
 import { SectionsTab } from "@/components/admin/ProjectForm/SectionsTab";
@@ -74,15 +71,16 @@ export default function AdminProjectEditPage() {
       console.log("🔍 [EDIT PAGE] Success data keys:", Object.keys(data));
 
       console.log("🔍 [FRONTEND] Full API response:", data);
-console.log("🔍 [FRONTEND] Config received:", data.config);
-console.log("🔍 [FRONTEND] Stats received:", data.config?.stats);
-console.log("🔍 [FRONTEND] Stats type:", typeof data.config?.stats);
-console.log("🔍 [FRONTEND] Is array:", Array.isArray(data.config?.stats));
+      console.log("🔍 [FRONTEND] Config received:", data.config);
+      console.log("🔍 [FRONTEND] Stats received:", data.config?.stats);
+      console.log("🔍 [FRONTEND] Stats type:", typeof data.config?.stats);
+      console.log("🔍 [FRONTEND] Is array:", Array.isArray(data.config?.stats));
 
-// ✅ Ensure stats is always an array
-    const statsArray = Array.isArray(data.config?.stats) ? data.config.stats : [];
-    console.log("✅ Processed stats array:", statsArray);
-
+      // ✅ Ensure stats is always an array
+      const statsArray = Array.isArray(data.config?.stats)
+        ? data.config.stats
+        : [];
+      console.log("✅ Processed stats array:", statsArray);
 
       setForm({
         project: {
@@ -91,10 +89,15 @@ console.log("🔍 [FRONTEND] Is array:", Array.isArray(data.config?.stats));
           status: data.project.status,
           is_published: data.project.is_published,
         },
-         config: {
-        ...data.config,
-        stats: statsArray, // Ensure stats is an array
-      },
+        config: {
+          ...data.config,
+          stats: statsArray, // Ensure stats is an array
+          keyFeatures: data.config?.keyFeatures || {
+            heading: "",
+            paragraph: "",
+            features: [],
+          },
+        },
         files: {} as Record<SectionName, File[]>,
         existingFiles: data.files || {},
         downloads:
@@ -204,8 +207,7 @@ console.log("🔍 [FRONTEND] Is array:", Array.isArray(data.config?.stats));
       };
       formData.append("project", JSON.stringify(projectData));
 
-      
-      // In handleSave - 
+      // In handleSave -
       const cleanConfig = JSON.parse(JSON.stringify(form.config));
       if (cleanConfig.stats && cleanConfig.stats.length === 0) {
         delete cleanConfig.stats;
@@ -285,8 +287,15 @@ console.log("🔍 [FRONTEND] Is array:", Array.isArray(data.config?.stats));
       });
 
       if (res.ok) {
-        invalidateProjectCache();
-        markProjectsChanged();
+        // ✅ Dispatch event to refresh navbar
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("projects-updated", {
+              detail: { timestamp: Date.now() },
+            }),
+          );
+        }
+
         router.refresh();
         setTimeout(() => {
           router.push("/admin/projects");
@@ -337,12 +346,16 @@ console.log("🔍 [FRONTEND] Is array:", Array.isArray(data.config?.stats));
       });
 
       if (res.ok) {
-        invalidateProjectCache(); // ✅ Invalidate cache
+        // ✅ Dispatch event to refresh navbar
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("projects-updated", {
+              detail: { timestamp: Date.now() },
+            }),
+          );
+        }
         router.refresh();
       }
-
-      // ✅ Invalidate navbar cache when project is deleted
-      markProjectsChanged();
 
       setTimeout(() => {
         router.push("/admin/projects");

@@ -1,42 +1,20 @@
-// app/(site)/projects/[slug]/page.tsx
-
 import { notFound } from 'next/navigation';
 import { ProjectDetailClient } from './ProjectDetailClient';
 
-// ✅ Enable ISR - revalidate every 60 seconds
-export const revalidate = 60;
+// ❌ REMOVE ISR - no revalidation
+// export const revalidate = 60;
 
 function getBaseUrl() {
   if (process.env.NODE_ENV === 'development') {
     return 'http://localhost:3000';
   }
-  // In production, use relative URL or environment variable
   return process.env.NEXT_PUBLIC_SITE_URL || '';
 }
 
-// ✅ Generate static paths at build time
-export async function generateStaticParams() {
-  try {
-    // Fetch only slugs for static generation
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || '';
-    const res = await fetch(`${baseUrl}/api/projects/slugs`, {
-      next: { revalidate: 3600 },
-    });
-    
-    if (!res.ok) return [];
-    const projects = await res.json();
-    
-    // Return only slugs for static generation
-    return projects.map((p: { slug: string }) => ({
-      slug: p.slug,
-    }));
-  } catch (error) {
-    console.error('generateStaticParams error:', error);
-    return [];
-  }
-}
+// ❌ REMOVE static params generation (no ISR needed)
+// export async function generateStaticParams() { ... }
 
-// ✅ Metadata generation
+// ✅ Metadata generation - dynamic, no cache
 export async function generateMetadata({
   params,
 }: {
@@ -46,7 +24,9 @@ export async function generateMetadata({
   
   try {
     const baseUrl = getBaseUrl();
-    const res = await fetch(`${baseUrl}/api/projects/slugs/${slug}`);
+    const res = await fetch(`${baseUrl}/api/projects/slugs/${slug}`, {
+      cache: 'no-store', // ✅ No cache for metadata
+    });
     
     if (!res.ok) {
       return { title: 'Project Not Found' };
@@ -67,7 +47,7 @@ export async function generateMetadata({
   }
 }
 
-// ✅ Main page component
+// ✅ Main page component - dynamic, no cache
 export default async function ProjectPage({
   params,
 }: {
@@ -79,9 +59,10 @@ export default async function ProjectPage({
     const baseUrl = getBaseUrl();
     const url = `${baseUrl}/api/projects/slugs/${slug}`;
     
-    // ✅ ISR caching - revalidate every 60 seconds
+    // ❌ REMOVE ISR caching
+    // Use no-store for fresh data every request
     const res = await fetch(url, {
-      next: { revalidate: 60 }, // Revalidate in background every 60 seconds
+      cache: 'no-store', // ✅ Always fetch fresh data
     });
     
     if (!res.ok) notFound();

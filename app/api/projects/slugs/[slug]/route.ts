@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbQuery } from "@/lib/db";
 import { RowDataPacket } from "mysql2";
-
+import { parseKeyFeatures } from "@/app/api/projects/helpers"
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -94,6 +94,7 @@ export async function GET(
         units: configRaw.section_units_enabled === 1,
         collage: configRaw.section_collage_enabled === 1,
         location: configRaw.section_location_enabled === 1,
+         keyFeatures: configRaw.section_key_features_enabled === 1, 
       },
       hero: configRaw.hero_title ? {
         title: configRaw.hero_title,
@@ -116,6 +117,8 @@ export async function GET(
         showMoreLimit: configRaw.collage_show_more_limit || 6,
         layoutPattern: configRaw.collage_layout_pattern || "modulo-6",
       },
+       keyFeatures: parseKeyFeatures(configRaw.key_features), 
+ 
     };
     
     // Get project files

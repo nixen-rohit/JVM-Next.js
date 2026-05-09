@@ -79,6 +79,7 @@ const createNewSlide = (): SlideConfig => {
     imageFile: null,
     imagePreview: null,
   };
+
   return normalizeSlide(base);
 };
 
@@ -304,12 +305,12 @@ export default function EditHeroSlide() {
       alert("Please upload a valid image file");
       return;
     }
-// ✅ Add validation first
-  const validation = validateImageFile(file);
-  if (!validation.valid) {
-    alert(validation.error);
-    return;
-  }
+    // ✅ Add validation first
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      alert(validation.error);
+      return;
+    }
 
     setIsProcessingImage(true);
 
@@ -631,20 +632,22 @@ export default function EditHeroSlide() {
       // After save success
       setSaveSuccess(true);
 
-      // Dispatch event to notify main site to refresh immediately
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(
-          new CustomEvent("hero-slides-updated", {
-            detail: { timestamp: Date.now() },
-          }),
-        );
-      }
+      if (response.ok) {
+        // ✅ Dispatch event to refresh UI
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("hero-slides-updated", {
+              detail: { timestamp: Date.now() },
+            }),
+          );
+        }
 
-      // Redirect
-      setTimeout(() => {
-        router.push("/admin/hero-slides");
-        router.refresh();
-      }, 1200);
+        // Redirect
+        setTimeout(() => {
+          router.push("/admin/hero-slides");
+          router.refresh();
+        }, 1200);
+      }
 
       console.log("Sending to API:", {
         method,

@@ -1,50 +1,35 @@
-// app/(admin)/admin/page.tsx - UPDATED with SWR
+// app/(admin)/admin/page.tsx
 "use client";
 
-import useSWR from 'swr';
 import Link from "next/link";
 import { BsBuilding, BsChatLeftText, BsPlus } from "react-icons/bs";
 import { TbSlideshow } from "react-icons/tb";
+import { useAdminStats } from "@/hooks/useAdminStats";
 
 export default function AdminDashboardPage() {
-  // Fetch all stats with SWR (automatically cached)
-  const { data: projectsData, isLoading: projectsLoading } = useSWR(
-    '/api/admin/projects?page=1&limit=1'
-  );
-  
-  const { data: contactsData, isLoading: contactsLoading } = useSWR(
-    '/api/contacts?page=1&limit=1'
-  );
-  
-  const { data: slidesData, isLoading: slidesLoading } = useSWR(
-    '/api/hero-slides?all=true'
-  );
+  const { stats, loading } = useAdminStats();
 
-  const totalProjects = projectsData?.total || projectsData?.projects?.length || 0;
-  const totalContacts = contactsData?.total || contactsData?.contacts?.length || 0;
-  const totalSlides = slidesData?.slides?.filter((s: any) => s.id !== "fallback-no-projects").length || 0;
-
-  const stats = [
+  const statCards = [
     {
       title: "Hero Slides",
-      value: totalSlides.toString(),
+      value: stats.slides.toString(),
       icon: TbSlideshow,
       link: "/admin/hero-slides",
-      loading: slidesLoading,
+      loading: loading.slides,
     },
     {
       title: "Total Projects",
-      value: totalProjects.toString(),
+      value: stats.projects.toString(),
       icon: BsBuilding,
       link: "/admin/projects",
-      loading: projectsLoading,
+      loading: loading.projects,
     },
     {
       title: "Contact Requests",
-      value: totalContacts.toString(),
+      value: stats.contacts.toString(),
       icon: BsChatLeftText,
       link: "/admin/contacts",
-      loading: contactsLoading,
+      loading: loading.contacts,
     },
   ];
 
@@ -72,7 +57,7 @@ export default function AdminDashboardPage() {
 
       {/* Stats Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {stats.map((stat) => {
+        {statCards.map((stat) => {
           const Icon = stat.icon;
 
           return (
@@ -82,7 +67,7 @@ export default function AdminDashboardPage() {
               className="group relative bg-zinc-900/50 border border-zinc-800 p-6 transition-all hover:border-emerald-500/50 hover:bg-zinc-900"
             >
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-                <div className="absolute -inset-px bg-gradient-to-br from-emerald-500/20 to-transparent blur-sm" />
+                <div className="absolute -inset-px bg-linear-to-br from-emerald-500/20 to-transparent blur-sm" />
               </div>
 
               <div className="relative flex items-center justify-between">

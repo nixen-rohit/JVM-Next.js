@@ -3,7 +3,7 @@
 import { generateHashId } from "@/types/id";
 import { NextRequest, NextResponse } from "next/server";
 import { getPool, dbQuery, dbExecute } from "@/lib/db";
-import { RowDataPacket, ResultSetHeader, PoolConnection } from "mysql2";
+import { RowDataPacket,  } from "mysql2";
 import { verifyToken } from "@/lib/auth";
 
 // ── GET /api/admin/projects?page=1&limit=10 ──────────────────────────────────

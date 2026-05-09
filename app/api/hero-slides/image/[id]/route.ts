@@ -1,4 +1,4 @@
-// app/api/hero-image/[id]/route.ts
+// app/api/hero-slides/image/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { dbQuery } from '@/lib/db';
 import { RowDataPacket } from 'mysql2';

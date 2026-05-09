@@ -15,6 +15,8 @@ import {
   Eye,
   EyeOff,
   ChevronDown,
+  Plus,
+  ListChecks,
   Trash2,
 } from "lucide-react";
 
@@ -43,7 +45,7 @@ type SectionConfig = {
   fileHint?: string;
   accept?: string;
   multiple?: boolean; // ✅ Add multiple flag
-  maxFiles?: number;   // ✅ Add max files limit
+  maxFiles?: number; // ✅ Add max files limit
 };
 
 type StatField =
@@ -53,6 +55,11 @@ type StatField =
   | "value"
   | "architect"
   | "category";
+
+type FeatureItem = {
+  id: string;
+  text: string;
+};
 
 const STAT_FIELDS: {
   id: StatField;
@@ -130,6 +137,14 @@ const SECTIONS: SectionConfig[] = [
     hasFiles: false,
   },
   {
+    id: "keyFeatures",
+    label: "Key Features Section",
+    description: "Manage homepage features/benefits list",
+    icon: <ListChecks className="w-5 h-5 text-green-600" />,
+    hasConfig: true,
+    hasFiles: false,
+  },
+  {
     id: "stats",
     label: "Stats Section",
     description: "Key metrics with icons (Location, Area, Value, etc.)",
@@ -166,29 +181,29 @@ const SECTIONS: SectionConfig[] = [
 ];
 
 export function SectionsTab({ form, setForm, onUpload, onRemove }: Props) {
-  const [expandedSection, setExpandedSection] = useState<SectionName | null>(null);
+  const [expandedSection, setExpandedSection] = useState<SectionName | null>(
+    null,
+  );
   const [uploadError, setUploadError] = useState<Record<string, string>>({});
 
-   
-useEffect(() => {
-  // Log current stats when component mounts or updates
-  console.log("🎨 [SectionsTab] Current stats in form:", form.config.stats);
-  console.log("🎨 [SectionsTab] Stats type:", typeof form.config.stats);
-  console.log("🎨 [SectionsTab] Is array:", Array.isArray(form.config.stats));
-  
-  // If stats exist, log each value
-  if (form.config.stats && Array.isArray(form.config.stats)) {
-    form.config.stats.forEach((stat: StatItem) => {
-      console.log(`📊 Stat: ${stat.icon} = ${stat.title}`);
-    });
-  }
-}, [form.config.stats]);
+  useEffect(() => {
+    // Log current stats when component mounts or updates
+    console.log("🎨 [SectionsTab] Current stats in form:", form.config.stats);
+    console.log("🎨 [SectionsTab] Stats type:", typeof form.config.stats);
+    console.log("🎨 [SectionsTab] Is array:", Array.isArray(form.config.stats));
 
+    // If stats exist, log each value
+    if (form.config.stats && Array.isArray(form.config.stats)) {
+      form.config.stats.forEach((stat: StatItem) => {
+        console.log(`📊 Stat: ${stat.icon} = ${stat.title}`);
+      });
+    }
+  }, [form.config.stats]);
 
   // useRef cache to avoid creating new object URLs on every render
   const pendingUrlsRef = useRef<Record<string, string>>({});
 
-    console.log("🎨 [SectionsTab] Rendering with config:", form.config);
+  console.log("🎨 [SectionsTab] Rendering with config:", form.config);
   console.log("🎨 [SectionsTab] Stats in form.config:", form.config.stats);
   console.log("🎨 [SectionsTab] Stats type:", typeof form.config.stats);
   console.log("🎨 [SectionsTab] Is array:", Array.isArray(form.config.stats));
@@ -198,8 +213,6 @@ useEffect(() => {
       Object.values(pendingUrlsRef.current).forEach(URL.revokeObjectURL);
     };
   }, []);
-
-  
 
   const toggleSection = useCallback(
     (sectionId: PageSectionName) => {
@@ -232,12 +245,20 @@ useEffect(() => {
     (section: SectionName, field: string, value: any) => {
       setForm((prev) => {
         if (!prev) return prev;
-        const sectionConfig = (prev.config as any)[section] || {};
+
+        const existingSection = (prev.config as any)[section] || {};
+
+        const updatedSection = {
+          ...existingSection,
+          [field]: value,
+        };
+
+        // Return new form state
         return {
           ...prev,
           config: {
             ...prev.config,
-            [section]: { ...sectionConfig, [field]: value },
+            [section]: updatedSection,
           },
         };
       });
@@ -250,7 +271,9 @@ useEffect(() => {
       setForm((prev) => {
         if (!prev) return prev;
         const existingStats: StatItem[] = prev.config.stats || [];
-        const existingIndex = existingStats.findIndex((s: StatItem) => s.icon === field);
+        const existingIndex = existingStats.findIndex(
+          (s: StatItem) => s.icon === field,
+        );
 
         let newStats;
         if (existingIndex >= 0) {
@@ -258,7 +281,10 @@ useEffect(() => {
             i === existingIndex ? { ...s, title: value } : s,
           );
         } else {
-          newStats = [...existingStats, { icon: field, title: value, desc: "" }];
+          newStats = [
+            ...existingStats,
+            { icon: field, title: value, desc: "" },
+          ];
         }
 
         return { ...prev, config: { ...prev.config, stats: newStats } };
@@ -267,29 +293,33 @@ useEffect(() => {
     [setForm],
   );
 
- const getStatValue = useCallback(
-  (field: StatField): string => {
-    if (!form.config.stats || !Array.isArray(form.config.stats)) {
-      console.log(`⚠️ No stats array found for field: ${field}`);
-      return "";
-    }
-    
-    const stat = form.config.stats.find((s: StatItem) => s.icon === field);
-    const value = stat?.title || "";
-    
-    // Log to verify
-    if (value) {
-      console.log(`✅ Found value for ${field}: ${value}`);
-    }
-    
-    return value;
-  },
-  [form.config.stats],
-);
+  const getStatValue = useCallback(
+    (field: StatField): string => {
+      if (!form.config.stats || !Array.isArray(form.config.stats)) {
+        console.log(`⚠️ No stats array found for field: ${field}`);
+        return "";
+      }
+
+      const stat = form.config.stats.find((s: StatItem) => s.icon === field);
+      const value = stat?.title || "";
+
+      // Log to verify
+      if (value) {
+        console.log(`✅ Found value for ${field}: ${value}`);
+      }
+
+      return value;
+    },
+    [form.config.stats],
+  );
 
   // ✅ Modified handleFileSelect with single file limit check
   const handleFileSelect = useCallback(
-    (section: SectionName, sectionConfig: SectionConfig, e: React.ChangeEvent<HTMLInputElement>) => {
+    (
+      section: SectionName,
+      sectionConfig: SectionConfig,
+      e: React.ChangeEvent<HTMLInputElement>,
+    ) => {
       const files = e.target.files;
       if (!files || files.length === 0) return;
 
@@ -316,14 +346,15 @@ useEffect(() => {
       }
 
       // For single file sections, only take the first file
-      const filesToUpload = sectionConfig.multiple === false && sectionConfig.maxFiles === 1
-        ? [files[0]]
-        : Array.from(files);
+      const filesToUpload =
+        sectionConfig.multiple === false && sectionConfig.maxFiles === 1
+          ? [files[0]]
+          : Array.from(files);
 
       // Create a new FileList-like object or just pass the files
       const dataTransfer = new DataTransfer();
-      filesToUpload.forEach(file => dataTransfer.items.add(file));
-      
+      filesToUpload.forEach((file) => dataTransfer.items.add(file));
+
       onUpload(section, dataTransfer.files);
       e.target.value = "";
     },
@@ -336,7 +367,11 @@ useEffect(() => {
       const pending = form.files[section] || [];
 
       return [
-        ...existing.map((file) => ({ ...file, src: file.src || "", is_pending: false })),
+        ...existing.map((file) => ({
+          ...file,
+          src: file.src || "",
+          is_pending: false,
+        })),
         ...pending.map((file, i) => {
           const key = `${section}-pending-${i}`;
           if (!pendingUrlsRef.current[key]) {
@@ -381,6 +416,27 @@ useEffect(() => {
     [onRemove],
   );
 
+  // Add this after your existing useEffects
+  useEffect(() => {
+    // Initialize keyFeatures if it doesn't exist
+    if (!form.config.keyFeatures) {
+      setForm((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          config: {
+            ...prev.config,
+            keyFeatures: {
+              heading: "",
+              paragraph: "",
+              features: [],
+            },
+          },
+        };
+      });
+    }
+  }, [form.config.keyFeatures, setForm]);
+
   return (
     <div className="space-y-3">
       {SECTIONS.map((section) => {
@@ -388,7 +444,8 @@ useEffect(() => {
         const files = getFilesForSection(section.id);
         const isExpanded = expandedSection === section.id;
         const hasError = !!uploadError[section.id];
-        const isSingleFileSection = section.multiple === false && section.maxFiles === 1;
+        const isSingleFileSection =
+          section.multiple === false && section.maxFiles === 1;
         const hasFile = files.length > 0;
 
         return (
@@ -442,7 +499,7 @@ useEffect(() => {
                     {hasFile ? "1/1" : "0/1"}
                   </span>
                 )}
-                
+
                 <span
                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
                     isEnabled
@@ -476,7 +533,9 @@ useEffect(() => {
               <div className="border-t border-green-900/30">
                 {isEnabled ? (
                   <div className="px-4 pb-4 pt-4 space-y-4">
-                    <p className="text-sm text-neutral-400">{section.description}</p>
+                    <p className="text-sm text-neutral-400">
+                      {section.description}
+                    </p>
 
                     {/* ✅ Show error message */}
                     {hasError && (
@@ -491,21 +550,33 @@ useEffect(() => {
                         {section.id === "hero" && (
                           <>
                             <div>
-                              <label className="block text-sm font-medium text-white mb-1">Title</label>
+                              <label className="block text-sm font-medium text-white mb-1">
+                                Title
+                              </label>
                               <input
                                 type="text"
                                 value={form.config.hero?.title || ""}
-                                onChange={(e) => updateConfig("hero", "title", e.target.value)}
+                                onChange={(e) =>
+                                  updateConfig("hero", "title", e.target.value)
+                                }
                                 className="w-full px-3 py-2 bg-black border border-green-900/40 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-green-700/50 focus:border-green-700 transition"
                                 placeholder="Green Valley Residences"
                               />
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-white mb-1">Subtitle</label>
+                              <label className="block text-sm font-medium text-white mb-1">
+                                Subtitle
+                              </label>
                               <input
                                 type="text"
                                 value={form.config.hero?.subtitle || ""}
-                                onChange={(e) => updateConfig("hero", "subtitle", e.target.value)}
+                                onChange={(e) =>
+                                  updateConfig(
+                                    "hero",
+                                    "subtitle",
+                                    e.target.value,
+                                  )
+                                }
                                 className="w-full px-3 py-2 bg-black border border-green-900/40 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-green-700/50 focus:border-green-700 transition"
                                 placeholder="Modern Living Redefined"
                               />
@@ -513,32 +584,187 @@ useEffect(() => {
                           </>
                         )}
 
+                        {/* Key Features Section */}
+                        {section.id === "keyFeatures" && (
+                          <div className="space-y-4">
+                            {/* Heading Field */}
+                            <div>
+                              <label className="block text-sm font-medium text-white mb-1">
+                                Section Heading
+                              </label>
+                              <input
+                                type="text"
+                                value={form.config.keyFeatures?.heading || ""}
+                                onChange={(e) =>
+                                  updateConfig(
+                                    "keyFeatures",
+                                    "heading",
+                                    e.target.value,
+                                  )
+                                }
+                                className="w-full px-3 py-2 bg-black border border-green-900/40 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-green-700/50 focus:border-green-700 transition"
+                                placeholder="Key Features"
+                              />
+                            </div>
+
+                            {/* Sub Paragraph Field */}
+                            <div>
+                              <label className="block text-sm font-medium text-white mb-1">
+                                Sub Paragraph
+                              </label>
+                              <textarea
+                                value={form.config.keyFeatures?.paragraph || ""}
+                                onChange={(e) =>
+                                  updateConfig(
+                                    "keyFeatures",
+                                    "paragraph",
+                                    e.target.value,
+                                  )
+                                }
+                                rows={2}
+                                className="w-full px-3 py-2 bg-black border border-green-900/40 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-green-700/50 focus:border-green-700 transition resize-y"
+                                placeholder="Brief description about the features section"
+                              />
+                            </div>
+
+                            {/* Features List with Plus Button */}
+                            <div>
+                              <div className="flex items-center justify-between mb-3">
+                                <label className="text-sm font-medium text-white">
+                                  Features / Bullet Points
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const currentFeatures =
+                                      form.config.keyFeatures?.features || [];
+                                    updateConfig("keyFeatures", "features", [
+                                      ...currentFeatures,
+                                      { id: crypto.randomUUID(), text: "" },
+                                    ]);
+                                  }}
+                                  className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-600 hover:text-green-500 transition"
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                  Add Feature
+                                </button>
+                              </div>
+
+                              <div className="space-y-2">
+                                {(form.config.keyFeatures?.features || []).map(
+                                  (feature: any, index: number) => (
+                                    <div
+                                      key={feature.id || index}
+                                      className="flex items-center gap-2"
+                                    >
+                                      <div className="shrink-0 mt-2">
+                                        <span className="w-2 h-2 bg-green-500 rounded-full block"></span>
+                                      </div>
+                                      <input
+                                        type="text"
+                                        value={feature.text || ""}
+                                        onChange={(e) => {
+                                          const newFeatures = [
+                                            ...(form.config.keyFeatures
+                                              ?.features || []),
+                                          ];
+                                          newFeatures[index] = {
+                                            ...feature,
+                                            text: e.target.value,
+                                          };
+                                          updateConfig(
+                                            "keyFeatures",
+                                            "features",
+                                            newFeatures,
+                                          );
+                                        }}
+                                        placeholder="Enter feature description..."
+                                        className="flex-1 px-3 py-2 bg-black border border-green-900/40 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-green-700/50 focus:border-green-700 transition text-sm"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const newFeatures = (
+                                            form.config.keyFeatures?.features ||
+                                            []
+                                          ).filter(
+                                            (_: any, i: number) => i !== index,
+                                          );
+                                          updateConfig(
+                                            "keyFeatures",
+                                            "features",
+                                            newFeatures,
+                                          );
+                                        }}
+                                        className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded-lg transition"
+                                        title="Remove feature"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  ),
+                                )}
+
+                                {(form.config.keyFeatures?.features || [])
+                                  .length === 0 && (
+                                  <p className="text-sm text-neutral-500 italic text-center py-4">
+                                    No features added. Click "Add Feature" to
+                                    create bullet points.
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Info */}
                         {section.id === "info" && (
                           <>
                             <div>
-                              <label className="block text-sm font-medium text-white mb-1">Section Title</label>
+                              <label className="block text-sm font-medium text-white mb-1">
+                                Section Title
+                              </label>
                               <input
                                 type="text"
                                 value={form.config.info?.title || ""}
-                                onChange={(e) => updateConfig("info", "title", e.target.value)}
+                                onChange={(e) =>
+                                  updateConfig("info", "title", e.target.value)
+                                }
                                 className="w-full px-3 py-2 bg-black border border-green-900/40 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-green-700/50 focus:border-green-700 transition"
                               />
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-white mb-1">First Description</label>
+                              <label className="block text-sm font-medium text-white mb-1">
+                                First Description
+                              </label>
                               <textarea
                                 value={form.config.info?.firstDescription || ""}
-                                onChange={(e) => updateConfig("info", "firstDescription", e.target.value)}
+                                onChange={(e) =>
+                                  updateConfig(
+                                    "info",
+                                    "firstDescription",
+                                    e.target.value,
+                                  )
+                                }
                                 rows={3}
                                 className="w-full px-3 py-2 bg-black border border-green-900/40 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-green-700/50 focus:border-green-700 transition resize-y"
                               />
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-white mb-1">Second Description</label>
+                              <label className="block text-sm font-medium text-white mb-1">
+                                Second Description
+                              </label>
                               <textarea
-                                value={form.config.info?.secondDescription || ""}
-                                onChange={(e) => updateConfig("info", "secondDescription", e.target.value)}
+                                value={
+                                  form.config.info?.secondDescription || ""
+                                }
+                                onChange={(e) =>
+                                  updateConfig(
+                                    "info",
+                                    "secondDescription",
+                                    e.target.value,
+                                  )
+                                }
                                 rows={3}
                                 className="w-full px-3 py-2 bg-black border border-green-900/40 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-green-700/50 focus:border-green-700 transition resize-y"
                               />
@@ -546,64 +772,93 @@ useEffect(() => {
                           </>
                         )}
 
-                      
+                        {section.id === "stats" && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {STAT_FIELDS.map((field) => {
+                              // Get the current value for this field
+                              const currentValue = getStatValue(field.id);
 
-{section.id === "stats" && (
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-    {STAT_FIELDS.map((field) => {
-      // Get the current value for this field
-      const currentValue = getStatValue(field.id);
-      
-      // Only show the field if it has a value OR if we're editing
-      // For admin panel, we want to show all fields so users can add values
-      return (
-        <div key={field.id} className="space-y-2">
-          <label className="flex items-center gap-2 text-sm font-medium text-white">
-            {field.icon}
-            {field.label}
-          </label>
-          {field.type === "select" ? (
-            <select
-              value={currentValue}
-              onChange={(e) => updateStatField(field.id, e.target.value)}
-              className="w-full px-3 py-2 bg-black border border-green-900/40 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-700/50 focus:border-green-700 transition"
-            >
-              <option value="">{field.placeholder}</option>
-              {field.options?.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          ) : (
-            <input
-              type="text"
-              value={currentValue}
-              onChange={(e) => updateStatField(field.id, e.target.value)}
-              placeholder={field.placeholder}
-              className="w-full px-3 py-2 bg-black border border-green-900/40 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-green-700/50 focus:border-green-700 transition"
-            />
-          )}
-        </div>
-      );
-    })}
-  </div>
-)}
+                              // Only show the field if it has a value OR if we're editing
+                              // For admin panel, we want to show all fields so users can add values
+                              return (
+                                <div key={field.id} className="space-y-2">
+                                  <label className="flex items-center gap-2 text-sm font-medium text-white">
+                                    {field.icon}
+                                    {field.label}
+                                  </label>
+                                  {field.type === "select" ? (
+                                    <select
+                                      value={currentValue}
+                                      onChange={(e) =>
+                                        updateStatField(
+                                          field.id,
+                                          e.target.value,
+                                        )
+                                      }
+                                      className="w-full px-3 py-2 bg-black border border-green-900/40 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-700/50 focus:border-green-700 transition"
+                                    >
+                                      <option value="">
+                                        {field.placeholder}
+                                      </option>
+                                      {field.options?.map((opt) => (
+                                        <option key={opt} value={opt}>
+                                          {opt}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  ) : (
+                                    <input
+                                      type="text"
+                                      value={currentValue}
+                                      onChange={(e) =>
+                                        updateStatField(
+                                          field.id,
+                                          e.target.value,
+                                        )
+                                      }
+                                      placeholder={field.placeholder}
+                                      className="w-full px-3 py-2 bg-black border border-green-900/40 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-green-700/50 focus:border-green-700 transition"
+                                    />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
                         {/* Highlight */}
                         {section.id === "highlight" && (
                           <>
                             <div>
-                              <label className="block text-sm font-medium text-white mb-1">Title</label>
+                              <label className="block text-sm font-medium text-white mb-1">
+                                Title
+                              </label>
                               <input
                                 type="text"
                                 value={form.config.highlight?.title || ""}
-                                onChange={(e) => updateConfig("highlight", "title", e.target.value)}
+                                onChange={(e) =>
+                                  updateConfig(
+                                    "highlight",
+                                    "title",
+                                    e.target.value,
+                                  )
+                                }
                                 className="w-full px-3 py-2 bg-black border border-green-900/40 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-green-700/50 focus:border-green-700 transition"
                               />
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-white mb-1">Paragraph</label>
+                              <label className="block text-sm font-medium text-white mb-1">
+                                Paragraph
+                              </label>
                               <textarea
                                 value={form.config.highlight?.paragraph || ""}
-                                onChange={(e) => updateConfig("highlight", "paragraph", e.target.value)}
+                                onChange={(e) =>
+                                  updateConfig(
+                                    "highlight",
+                                    "paragraph",
+                                    e.target.value,
+                                  )
+                                }
                                 rows={2}
                                 className="w-full px-3 py-2 bg-black border border-green-900/40 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-green-700/50 focus:border-green-700 transition resize-y"
                               />
@@ -619,8 +874,16 @@ useEffect(() => {
                             </label>
                             <input
                               type="url"
-                              value={form.config.location?.googleMapEmbedUrl || ""}
-                              onChange={(e) => updateConfig("location", "googleMapEmbedUrl", e.target.value)}
+                              value={
+                                form.config.location?.googleMapEmbedUrl || ""
+                              }
+                              onChange={(e) =>
+                                updateConfig(
+                                  "location",
+                                  "googleMapEmbedUrl",
+                                  e.target.value,
+                                )
+                              }
                               className="w-full px-3 py-2 bg-black border border-green-900/40 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-green-700/50 focus:border-green-700 transition"
                               placeholder="https://www.google.com/maps/embed?pb=..."
                             />
@@ -636,10 +899,16 @@ useEffect(() => {
                     {section.hasFiles && section.fileLabel && (
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <label className="text-sm font-medium text-white">{section.fileLabel}</label>
+                          <label className="text-sm font-medium text-white">
+                            {section.fileLabel}
+                          </label>
                           {isSingleFileSection && (
-                            <span className={`text-xs ${hasFile ? "text-green-500" : "text-neutral-500"}`}>
-                              {hasFile ? "✓ Image uploaded" : "No image uploaded"}
+                            <span
+                              className={`text-xs ${hasFile ? "text-green-500" : "text-neutral-500"}`}
+                            >
+                              {hasFile
+                                ? "✓ Image uploaded"
+                                : "No image uploaded"}
                             </span>
                           )}
                           {!isSingleFileSection && files.length > 0 && (
@@ -653,7 +922,8 @@ useEffect(() => {
                         {isSingleFileSection && hasFile && (
                           <div className="relative group">
                             <div className="flex items-center gap-3 p-3 bg-black/60 rounded-lg border border-green-900/40">
-                              {files[0]?.src?.startsWith("blob:") || files[0]?.src?.startsWith("data:") ? (
+                              {files[0]?.src?.startsWith("blob:") ||
+                              files[0]?.src?.startsWith("data:") ? (
                                 <img
                                   src={files[0].src}
                                   alt={files[0].alt_text || files[0].file_name}
@@ -665,15 +935,25 @@ useEffect(() => {
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-white truncate">{files[0].file_name}</p>
+                                <p className="text-sm font-medium text-white truncate">
+                                  {files[0].file_name}
+                                </p>
                                 <p className="text-xs text-neutral-400">
                                   {files[0].is_pending ? "New • " : ""}
-                                  {files[0].mime_type?.split("/")[1]?.toUpperCase()}
+                                  {files[0].mime_type
+                                    ?.split("/")[1]
+                                    ?.toUpperCase()}
                                 </p>
                               </div>
                               <button
                                 type="button"
-                                onClick={() => handleRemove(section.id, 0, !files[0].is_pending)}
+                                onClick={() =>
+                                  handleRemove(
+                                    section.id,
+                                    0,
+                                    !files[0].is_pending,
+                                  )
+                                }
                                 className="p-2 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded-lg transition"
                                 title="Remove image"
                               >
@@ -690,22 +970,28 @@ useEffect(() => {
                               type="file"
                               accept={section.accept}
                               multiple={section.multiple}
-                              onChange={(e) => handleFileSelect(section.id, section, e)}
+                              onChange={(e) =>
+                                handleFileSelect(section.id, section, e)
+                              }
                               className="hidden"
                               id={`upload-${section.id}`}
                               disabled={isSingleFileSection && hasFile}
                             />
                             <label
                               htmlFor={`upload-${section.id}`}
-                              className={`cursor-pointer flex flex-col items-center ${(isSingleFileSection && hasFile) ? "opacity-50 cursor-not-allowed" : ""}`}
+                              className={`cursor-pointer flex flex-col items-center ${isSingleFileSection && hasFile ? "opacity-50 cursor-not-allowed" : ""}`}
                             >
                               <div className="w-10 h-10 rounded-full bg-green-900/30 flex items-center justify-center mb-2">
                                 <Upload className="w-5 h-5 text-green-600" />
                               </div>
                               <p className="text-sm font-medium text-white">
-                                {isSingleFileSection && hasFile ? "Replace Image" : `Upload ${section.fileLabel}`}
+                                {isSingleFileSection && hasFile
+                                  ? "Replace Image"
+                                  : `Upload ${section.fileLabel}`}
                               </p>
-                              <p className="text-xs text-neutral-500">{section.fileHint}</p>
+                              <p className="text-xs text-neutral-500">
+                                {section.fileHint}
+                              </p>
                             </label>
                           </div>
                         )}
@@ -718,7 +1004,8 @@ useEffect(() => {
                                 key={file.id}
                                 className="flex items-center gap-3 p-2 bg-black/40 rounded border border-green-900/30"
                               >
-                                {file.src?.startsWith("blob:") || file.src?.startsWith("data:") ? (
+                                {file.src?.startsWith("blob:") ||
+                                file.src?.startsWith("data:") ? (
                                   <img
                                     src={file.src}
                                     alt={file.alt_text || file.file_name}
@@ -730,15 +1017,25 @@ useEffect(() => {
                                   </div>
                                 )}
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-white truncate">{file.file_name}</p>
+                                  <p className="text-sm font-medium text-white truncate">
+                                    {file.file_name}
+                                  </p>
                                   <p className="text-xs text-neutral-400">
                                     {file.is_pending ? "New • " : ""}
-                                    {file.mime_type?.split("/")[1]?.toUpperCase()}
+                                    {file.mime_type
+                                      ?.split("/")[1]
+                                      ?.toUpperCase()}
                                   </p>
                                 </div>
                                 <button
                                   type="button"
-                                  onClick={() => handleRemove(section.id, index, !file.is_pending)}
+                                  onClick={() =>
+                                    handleRemove(
+                                      section.id,
+                                      index,
+                                      !file.is_pending,
+                                    )
+                                  }
                                   className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded transition"
                                   title="Remove"
                                 >

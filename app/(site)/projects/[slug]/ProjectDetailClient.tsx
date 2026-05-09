@@ -16,6 +16,8 @@ import { CollageSection } from "@/components/project/CollageSection";
 import { LocationMap } from "@/components/project/LocationMap";
 import { ImageModal } from "@/components/project/ImageModal";
 import { MapModal } from "@/components/project/MapModal";
+import { KeyFeatures } from "@/components/project/KeyFeatures";
+
 
 export function ProjectDetailClient({
   initialData,
@@ -76,7 +78,14 @@ export function ProjectDetailClient({
       />
     );
   }
-
+// Add this right before returning the component
+console.log("🔍 KeyFeatures Debug:", {
+  isEnabled: config.sections?.keyFeatures,
+  keyFeatures: config.keyFeatures,
+  heading: config.keyFeatures?.heading,
+  paragraph: config.keyFeatures?.paragraph,
+  features: config.keyFeatures?.features,
+});
   
  // ✅ Regular project view for ongoing/sold projects
   return (
@@ -103,6 +112,15 @@ export function ProjectDetailClient({
           onDownload={handleDownload}
         />
       )}
+      
+      {config.sections.keyFeatures && (
+      <KeyFeatures
+        heading={config.keyFeatures?.heading}
+        paragraph={config.keyFeatures?.paragraph}
+        features={config.keyFeatures?.features}
+        isEnabled={config.sections.keyFeatures}
+      />
+    )}
       {config.sections.stats && config.stats && config.stats.length > 0 && (
         <Stats stats={config.stats} />
       )}
@@ -113,6 +131,7 @@ export function ProjectDetailClient({
           imageSrc={files.highlight[0].src}
         />
       )}
+
       {config.sections.media && files.media?.length > 0 && (
         <MediaSection images={files.media} onImageClick={setActiveMedia} />
       )}

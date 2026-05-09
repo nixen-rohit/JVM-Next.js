@@ -92,13 +92,13 @@ export function LocationMap({
         <div className="grid md:grid-cols-2 gap-10">
           {/* Paper Map - LEFT SIDE */}
           {paperMap && (
-            <div className="group relative rounded-3xl p-[1px] bg-linear-to-br from-indigo-200/40 to-transparent">
+            <div className="group relative rounded-3xl p-px bg-linear-to-br from-indigo-200/40 to-transparent">
               <div className="bg-white rounded-3xl p-6 shadow-md border border-gray-100 transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 space-y-4">
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
                   Paper Map of Site
                 </h2>
                 <div 
-                  className="w-full aspect-[16/9] relative rounded-2xl overflow-hidden cursor-pointer"
+                  className="w-full aspect-video relative rounded-2xl overflow-hidden cursor-pointer"
                   onClick={() => onImageClick(paperMap)}
                 >
                   <Image
@@ -118,7 +118,7 @@ export function LocationMap({
 
           {/* Google Map - RIGHT SIDE */}
           {googleMapUrl && embedUrl && (
-            <div className="group relative rounded-3xl p-[1px] bg-linear-to-br from-indigo-200/40 to-transparent">
+            <div className="group relative rounded-3xl p-px bg-linear-to-br from-indigo-200/40 to-transparent">
               <div className="bg-white rounded-3xl p-6 shadow-md border border-gray-100 transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
@@ -128,7 +128,7 @@ export function LocationMap({
                     Live
                   </span>
                 </div>
-                <div className="w-full aspect-[16/9] rounded-2xl overflow-hidden relative">
+                <div className="w-full aspect-video rounded-2xl overflow-hidden relative">
                   <iframe
                     src={embedUrl}
                     className="w-full h-full border-0"
