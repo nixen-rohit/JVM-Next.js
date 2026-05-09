@@ -33,7 +33,7 @@ export function KeyFeatures({
     features?.filter((f) => f.text && f.text.trim() !== "") || [];
 
   return (
-   <section className="min-h-screen bg-zinc-500 py-16 px-4 sm:px-6">
+   <section className="min-h-screen bg-zinc-300 py-16 px-4 sm:px-6">
   <div className="max-w-7xl mx-auto">
     
     {/* Header Section */}
