@@ -2,13 +2,12 @@
 "use client";
 
 import { useState, useEffect, memo, useRef } from "react";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { GoDotFill } from "react-icons/go";
 import Loader from "./Loader";
 import { useHeroSlides } from "@/hooks/useHeroSlides";
 import {
-  FALLBACK_SLIDE,
+   
   isFallbackSlide,
   getDisplaySlides,
 } from "@/lib/fallback-slide";
@@ -48,7 +47,7 @@ const SlideContent = memo(
               alt={slide.imageAlt}
               sizes="100vw"
               draggable={false}
-              className="absolute inset-0 w-full h-full object-cover object-center opacity-0 animate-fade-in"
+              className="absolute inset-0 w-full h-svh object-cover object-center opacity-0 animate-fade-in"
               loading="eager"
               decoding="async"
               
@@ -67,10 +66,10 @@ const SlideContent = memo(
 SlideContent.displayName = "SlideContent";
 
 export default function HeroSlider() {
-  const { slides: fetchedSlides, isLoading, refreshSlides } = useHeroSlides();
+  const { slides: fetchedSlides, isLoading, } = useHeroSlides();
   const [slides, setSlides] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const previousSlidesRef = useRef<string>(""); // Track slides by JSON string
+  const previousSlidesRef = useRef<string>("");  
 
   // Update slides when fetched data changes - FIXED infinite loop
   useEffect(() => {
