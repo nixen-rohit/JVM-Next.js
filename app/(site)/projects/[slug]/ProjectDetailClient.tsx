@@ -79,13 +79,13 @@ export function ProjectDetailClient({
     );
   }
 // Add this right before returning the component
-console.log("🔍 KeyFeatures Debug:", {
-  isEnabled: config.sections?.keyFeatures,
-  keyFeatures: config.keyFeatures,
-  heading: config.keyFeatures?.heading,
-  paragraph: config.keyFeatures?.paragraph,
-  features: config.keyFeatures?.features,
-});
+// console.log("🔍 KeyFeatures Debug:", {
+//   isEnabled: config.sections?.keyFeatures,
+//   keyFeatures: config.keyFeatures,
+//   heading: config.keyFeatures?.heading,
+//   paragraph: config.keyFeatures?.paragraph,
+//   features: config.keyFeatures?.features,
+// });
   
  // ✅ Regular project view for ongoing/sold projects
   return (
