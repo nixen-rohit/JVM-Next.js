@@ -279,6 +279,7 @@ export default function AdminProjectEditPage() {
       } else {
         formData.append("documentDelete", "true");
       }
+      const currentSlug = form?.project?.slug;
 
       const res = await fetch(`/api/projects/${projectId}`, {
         method: "PUT",
@@ -287,11 +288,14 @@ export default function AdminProjectEditPage() {
       });
 
       if (res.ok) {
-        // ✅ Dispatch event to refresh navbar
+        // ✅ Dispatch event to refresh all client components
         if (typeof window !== "undefined") {
           window.dispatchEvent(
-            new CustomEvent("projects-updated", {
-              detail: { timestamp: Date.now() },
+            new CustomEvent("project-updated", {
+              detail: {
+                slug: currentSlug,
+                timestamp: Date.now(),
+              },
             }),
           );
         }
@@ -354,6 +358,19 @@ export default function AdminProjectEditPage() {
             }),
           );
         }
+
+        // Also dispatch project-specific update if we have the slug
+        if (form?.project?.slug) {
+          window.dispatchEvent(
+            new CustomEvent("project-updated", {
+              detail: {
+                slug: form.project.slug,
+                timestamp: Date.now(),
+              },
+            }),
+          );
+        }
+
         router.refresh();
       }
 

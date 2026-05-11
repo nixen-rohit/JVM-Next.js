@@ -28,22 +28,4 @@ export function useNavbarProjects() {
   };
 }
 
-export function useProject(slug: string) {
-  const { data, error, isLoading, mutate } = useSWR(
-    slug ? `/api/projects/slugs/${slug}` : null,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-     dedupingInterval: 300000,  // 5 minutes cache
-      refreshInterval: 300000,    // Auto refresh every 5 minutes
-    },
-  );
-
-  return {
-    project: data,
-    isLoading,
-    error,
-    refreshProject: mutate,
-  };
-}
+ 

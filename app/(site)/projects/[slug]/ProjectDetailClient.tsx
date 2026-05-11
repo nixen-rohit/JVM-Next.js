@@ -2,8 +2,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ProjectDetailResponse } from "@/types/project";
-
+import { useProjectData } from "@/hooks/useProjectData";
+import { ProjectFile, ProjectDetailResponse } from "@/types/project";
 // Import section components
 import { ComingSoon } from "@/components/ComingSoon";
 import { Hero } from "@/components/project/Hero";
@@ -18,20 +18,22 @@ import { ImageModal } from "@/components/project/ImageModal";
 import { MapModal } from "@/components/project/MapModal";
 import { KeyFeatures } from "@/components/project/KeyFeatures";
 
+interface ProjectDetailClientProps {
+  initialData: ProjectDetailResponse ;
+  slug: string;
+}
 
 export function ProjectDetailClient({
   initialData,
-}: {
-  initialData: ProjectDetailResponse;
-}) {
+  slug,
+}: ProjectDetailClientProps) {
   const [activeMedia, setActiveMedia] = useState<string | null>(null);
   const [activeMap, setActiveMap] = useState<"paper" | "google" | null>(null);
-  const { config, files, downloads, project } = initialData;
-
+  const { project, config, files, downloads, isLoading, error } =
+    useProjectData(slug, initialData);
 
   // ✅ Check if project is upcoming
-  const isUpcoming = project.status === 'upcoming';
-
+  const isUpcoming = project.status === "upcoming";
 
   // Handle ESC key for modals
   useEffect(() => {
@@ -67,8 +69,7 @@ export function ProjectDetailClient({
     document.body.removeChild(link);
   };
 
-
-   // ✅ Show Coming Soon page for upcoming projects
+  // ✅ Show Coming Soon page for upcoming projects
   if (isUpcoming) {
     return (
       <ComingSoon
@@ -78,16 +79,39 @@ export function ProjectDetailClient({
       />
     );
   }
-// Add this right before returning the component
-// console.log("🔍 KeyFeatures Debug:", {
-//   isEnabled: config.sections?.keyFeatures,
-//   keyFeatures: config.keyFeatures,
-//   heading: config.keyFeatures?.heading,
-//   paragraph: config.keyFeatures?.paragraph,
-//   features: config.keyFeatures?.features,
-// });
-  
- // ✅ Regular project view for ongoing/sold projects
+
+  if (isLoading && !project) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+
+  if (error || !project) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-500">
+            Error loading project
+          </h2>
+          <p className="text-gray-400 mt-2">
+            {error?.message || "Project not found"}
+          </p>
+        </div>
+      </div>
+    );
+  }
+  // Add this right before returning the component
+  // console.log("🔍 KeyFeatures Debug:", {
+  //   isEnabled: config.sections?.keyFeatures,
+  //   keyFeatures: config.keyFeatures,
+  //   heading: config.keyFeatures?.heading,
+  //   paragraph: config.keyFeatures?.paragraph,
+  //   features: config.keyFeatures?.features,
+  // });
+
+  // ✅ Regular project view for ongoing/sold projects
   return (
     <div className="bg-white text-gray-900 min-h-screen">
       {/* Conditionally render sections based on config */}
@@ -112,15 +136,15 @@ export function ProjectDetailClient({
           onDownload={handleDownload}
         />
       )}
-      
+
       {config.sections.keyFeatures && (
-      <KeyFeatures
-        heading={config.keyFeatures?.heading}
-        paragraph={config.keyFeatures?.paragraph}
-        features={config.keyFeatures?.features}
-        isEnabled={config.sections.keyFeatures}
-      />
-    )}
+        <KeyFeatures
+          heading={config.keyFeatures?.heading}
+          paragraph={config.keyFeatures?.paragraph}
+          features={config.keyFeatures?.features}
+          isEnabled={config.sections.keyFeatures}
+        />
+      )}
       {config.sections.stats && config.stats && config.stats.length > 0 && (
         <Stats stats={config.stats} />
       )}
@@ -163,7 +187,7 @@ export function ProjectDetailClient({
         <MapModal
           type={activeMap}
           paperSrc={
-            files.location?.find((f) =>
+            files.location?.find((f: ProjectFile) =>
               f.file_name.toLowerCase().includes("paper"),
             )?.src
           }

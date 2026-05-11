@@ -1,53 +1,9 @@
 import { notFound } from 'next/navigation';
 import { ProjectDetailClient } from './ProjectDetailClient';
 
-// ❌ REMOVE ISR - no revalidation
-// export const revalidate = 60;
+// ✅ Force dynamic - no static generation
+export const dynamic = 'force-dynamic';
 
-function getBaseUrl() {
-  if (process.env.NODE_ENV === 'development') {
-    return 'http://localhost:3000';
-  }
-  return process.env.NEXT_PUBLIC_SITE_URL || '';
-}
-
-// ❌ REMOVE static params generation (no ISR needed)
-// export async function generateStaticParams() { ... }
-
-// ✅ Metadata generation - dynamic, no cache
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  
-  try {
-    const baseUrl = getBaseUrl();
-    const res = await fetch(`${baseUrl}/api/projects/slugs/${slug}`, {
-      cache: 'no-store', // ✅ No cache for metadata
-    });
-    
-    if (!res.ok) {
-      return { title: 'Project Not Found' };
-    }
-    
-    const data = await res.json();
-    
-    return {
-      title: `${data.project?.name} | Your Site`,
-      description: data.config?.info?.firstDescription?.slice(0, 160),
-      openGraph: {
-        title: data.project?.name,
-        description: data.config?.info?.firstDescription?.slice(0, 160),
-      },
-    };
-  } catch {
-    return { title: 'Project Not Found' };
-  }
-}
-
-// ✅ Main page component - dynamic, no cache
 export default async function ProjectPage({
   params,
 }: {
@@ -55,21 +11,22 @@ export default async function ProjectPage({
 }) {
   const { slug } = await params;
   
+  // ✅ Only fetch initial data for SEO, client will re-fetch with SWR
+  const baseUrl = process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:3000' 
+    : process.env.NEXT_PUBLIC_SITE_URL || '';
+  
   try {
-    const baseUrl = getBaseUrl();
-    const url = `${baseUrl}/api/projects/slugs/${slug}`;
-    
-    // ❌ REMOVE ISR caching
-    // Use no-store for fresh data every request
-    const res = await fetch(url, {
-      cache: 'no-store', // ✅ Always fetch fresh data
+    const res = await fetch(`${baseUrl}/api/projects/slugs/${slug}`, {
+      cache: 'no-store',
     });
     
     if (!res.ok) notFound();
     
-    const data = await res.json();
+    const initialData = await res.json();
     
-    return <ProjectDetailClient initialData={data} />;
+    // Pass initial data for SSR, SWR will handle updates
+    return <ProjectDetailClient initialData={initialData} slug={slug} />;
   } catch (error) {
     console.error("❌ Page error:", error);
     notFound();
