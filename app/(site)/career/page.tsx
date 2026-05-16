@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { PiBuildingsLight, PiTreePalmLight } from "react-icons/pi";
+import CareerStats from "@/components/CareerStats";
+import CareerHeader from "@/components/CarrerHeader";
+
 
 // --- Mock Data: Career Hero Slides ---
 const heroSlides = [
@@ -119,91 +122,11 @@ export default function Career() {
         </div>
       </section>
 
-      {/* 2. Split Content Section - Perfectly matches the Hero's max-w-[90rem] constraint */}
-      <section className="w-full max-w-360 mx-auto px-6 md:px-12 lg:px-20 py-20 md:py-32 flex flex-col lg:flex-row gap-16 lg:gap-24 items-start">
-        {/* Left Column */}
-        <motion.div
-          initial={{ opacity: 0, x: -30 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8 }}
-          className="w-full lg:w-1/2 flex flex-col items-start"
-        >
-          <h2 className="text-4xl md:text-5xl lg:text-7xl font-serif text-[#2a3035] leading-[1.1] mb-6 tracking-tight">
-            Unlock Exclusive
-            <br /> Job Opportunities
-          </h2>
-          <p className="text-gray-500 leading-relaxed mb-8 font-light text-lg md:text-xl lg:text-xl pr-4">
-            Join a network of passionate professionals and industry experts
-            shaping the future of real estate in India. JMV Developers has built
-            a strong reputation for quality, trust, and timely delivery,
-            offering diverse residential opportunities including plots, builder
-            floors, villas, and farmhouses. Be part of a people-first
-            organization that values excellence, growth, and
-            innovation—empowering you to deliver meaningful solutions and create
-            lasting impact for clients.
-          </p>
+     
 
-          <div className="w-full mt-2">
-            <p className="text-[#2a3035] font-medium text-lg mb-1">
-              Post your resume to us at
-            </p>
-            <a
-              href="mailto:info@jmvdevelopers.com"
-              className="text-teal-700 hover:text-teal-900 transition-colors underline underline-offset-4 decoration-teal-700/30 hover:decoration-teal-900 font-semibold text-lg"
-            >
-              info@jmvdevelopers.com
-            </a>
-          </div>
-        </motion.div>
+      <CareerHeader/>
 
-        {/* Right Column */}
-        <motion.div
-          initial={{ opacity: 0, x: 30 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="w-full lg:w-1/2 relative flex flex-col sm:flex-row gap-12 sm:gap-0 mt-4 lg:mt-0"
-        >
-          {/* Vertical Divider Line with Diamond */}
-          <div className="hidden sm:block absolute left-1/2 top-10 bottom-4 w-px bg-gray-200 -translate-x-1/2">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 border border-gray-300 bg-white rotate-45" />
-          </div>
-
-          {/* Column 1: UAE Projects */}
-          <div className="w-full sm:w-1/2 sm:pr-12 flex flex-col">
-            <h3 className="text-[14px] font-semibold text-teal-800 mb-8">
-              Explore Careers in Real Estate.
-            </h3>
-
-            <div className="text-[#5b7380] mb-6">
-              <PiBuildingsLight size={85} strokeWidth={2} />
-            </div>
-
-            <h4 className="text-[13px] uppercase tracking-wider font-bold text-slate-800 mb-4">
-              Job Titles
-            </h4>
-            <p className="text-gray-500 font-light text-lg md:text-xl lg:text-xl leading-relaxed">
-              Real Estate Clerk, Real Estate Manager, Sales Assistant
-            </p>
-          </div>
-
-          {/* Column 2: CBI Caribbean */}
-          <div className="w-full sm:w-1/2 sm:pl-12 flex flex-col sm:mt-13">
-            <div className="text-[#5b7380] mb-6">
-              <PiTreePalmLight size={85} strokeWidth={2} />
-            </div>
-
-            <h4 className="text-[13px] uppercase tracking-wider font-bold text-slate-800 mb-4">
-              Skill Sets
-            </h4>
-            <p className="text-gray-500 font-light text-lg md:text-xl lg:text-xl leading-relaxed">
-              High Performance, Passionate Teamwork, Dedication, Energetic,
-              Problem Solving, Initiative & Enterprise
-            </p>
-          </div>
-        </motion.div>
-      </section>
+      <CareerStats/>
     </main>
   );
 }
