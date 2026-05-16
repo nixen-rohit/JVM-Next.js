@@ -13,7 +13,7 @@ import {
 } from "@/lib/fallback-slide";
  
 
-const SLIDE_DURATION = 7000;
+const SLIDE_DURATION = 6000;
 
 // Memoized slide content
 const SlideContent = memo(

@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import { FiChevronDown } from "react-icons/fi";
+import { useNews } from "@/hooks/useNews";
 
-// --- Mock Data: Hero Slides ---
+// --- Mock Data: Hero Slides (TODO: Make dynamic from admin) ---
 const heroSlides = [
   {
     id: 1,
@@ -30,80 +32,12 @@ const heroSlides = [
   },
 ];
 
-// --- Mock Data: Articles ---
-const articles = [
-  {
-    id: 1,
-    image: "/news1.jpg",
-    category: "Press Media",
-    date: "October 10, 2025",
-    title:
-      "Upgrading Yamuna Expressway with modern LED lights and secure crash barriers.",
-  },
-  {
-    id: 2,
-    image: "/news2.jpg",
-    category: "Press Media",
-    date: "October 30, 2024",
-    title:
-      "The highly anticipated Jewar International Airport is rapidly becoming reality.",
-  },
-  {
-    id: 3,
-    image: "/news3.jpg",
-    category: "Press Media",
-    date: "October 17, 2024",
-
-    title:
-      "Allocating 30 prime acres along the Yamuna Expressway for a new CRPF base.",
-  },
-  {
-    id: 4,
-    image: "/news4.jpg",
-    category: "Press Media",
-    date: "October 16, 2024",
-    title: "Jewar International Airport in Greater Noida to be reality soon",
-  },
-  // --- 4 New Articles ---
-  {
-    id: 5,
-    image: "/news5.jpg",
-    category: "Blog",
-    date: "September 22, 2024",
-    title: "JMV Developers Farm",
-  },
-  {
-    id: 6,
-    image: "/news6.jpg",
-    category: "Press Media",
-    date: "August 15, 2024",
-    source: "Gulf News",
-    title:
-      "Delhi-Mumbai 12-hour Expressway to come soon:List of expressways that you must know",
-  },
-  {
-    id: 7,
-    image: "/news7.webp",
-    category: "Blog",
-    date: "July 05, 2024",
-    title:
-      "Delhi's IGI and Noida's upcoming Jewar airport to be connected! Govt plans 40 km elevated road",
-  },
-  {
-    id: 8,
-    image: "/news8.avif",
-    category: "Press Media",
-    date: "June 12, 2024",
-    title:
-      "UP government signs MoU to fast-track work on Jewar International Airport",
-  },
-];
-
 const categories = ["All", "Press Media", "Blog"];
 const SLIDE_DURATION = 5000; // 5 seconds per slide
 
 export default function News() {
   const [activeCategory, setActiveCategory] = useState("All");
+  const { articles, isLoading } = useNews(activeCategory);
   const [currentSlide, setCurrentSlide] = useState(0);
 
   // Timer logic for the Hero Slider
@@ -116,6 +50,14 @@ export default function News() {
 
     return () => clearTimeout(timer);
   }, [currentSlide]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-600"></div>
+      </div>
+    );
+  }
 
   return (
     <main className="w-full min-h-screen bg-white text-slate-900">
@@ -141,12 +83,12 @@ export default function News() {
           </motion.div>
         </AnimatePresence>
 
-        {/* linear Overlay for Text Readability */}
+        {/* Linear Overlay for Text Readability */}
         <div className="absolute inset-0 z-10 bg-linear-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
         <div className="absolute inset-0 z-10 bg-linear-to-r from-black/60 via-transparent to-transparent pointer-events-none" />
 
         {/* Hero Content */}
-        <div className="relative z-20 w-full max-w-480 mx-auto px-6 md:px-12 lg:px-20 pb-16 md:pb-24 flex justify-between items-end pointer-events-none">
+        <div className="relative z-20 w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-20 pb-16 md:pb-24 flex justify-between items-end pointer-events-none">
           {/* Animated Text Content */}
           <div className="max-w-3xl pointer-events-auto">
             <AnimatePresence mode="wait">
@@ -181,7 +123,7 @@ export default function News() {
               >
                 {index === currentSlide && (
                   <motion.div
-                    key={currentSlide} // Forces re-render of animation
+                    key={currentSlide}
                     initial={{ width: "0%" }}
                     animate={{ width: "100%" }}
                     transition={{
@@ -197,14 +139,14 @@ export default function News() {
         </div>
       </section>
 
-      {/* 2. Articles Grid Section */}
+      {/* Articles Grid Section */}
       <section className="w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-8 py-20">
-        {/* Header Title & Description */}
+        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
           <h2 className="text-5xl md:text-6xl font-serif text-slate-800">
             All Articles
           </h2>
-          <p className="text-lg md:text-xl lg:text-xl text-gray-500 max-w-md md:text-right leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-500 max-w-md md:text-right leading-relaxed">
             Discover all the latest updates, insights, and valuable resources
             right here. This hub provides blog posts, press releases, and
             detailed guides to keep you up to date on our projects.
@@ -213,10 +155,9 @@ export default function News() {
 
         <hr className="border-gray-200 mb-8" />
 
-        {/* Filters and Sorting Bar */}
+        {/* Filters */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-12">
-          {/* Left: Category Buttons */}
-          <div className="flex items-center gap-2 md:gap-4 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto scrollbar-hide">
+          <div className="flex items-center gap-2 md:gap-4 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -232,7 +173,6 @@ export default function News() {
             ))}
           </div>
 
-          {/* Right: Sort Dropdown */}
           <button className="flex items-center gap-2 px-5 py-2 rounded-full border border-gray-300 text-sm text-gray-700 hover:border-gray-500 transition-colors">
             <span className="text-gray-500">Sort by |</span>
             <span className="font-medium">Newest</span>
@@ -240,15 +180,13 @@ export default function News() {
           </button>
         </div>
 
-        {/* Grid Container */}
+        {/* Articles Grid - Fixed Image Source */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
-          {articles
-            // Filter logic applied to render active categories
-            .filter(
-              (article) =>
-                activeCategory === "All" || article.category === activeCategory,
-            )
-            .map((article, index) => (
+          {articles.map((article: any, index: number) => {
+            // ✅ Build image URL from blob endpoint
+            const imageUrl = `/api/news-image/${article.id}?v=${article.version || 1}`;
+            
+            return (
               <motion.div
                 key={article.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -257,31 +195,62 @@ export default function News() {
                 transition={{ duration: 0.5, delay: (index % 4) * 0.1 }}
                 className="group cursor-pointer flex flex-col"
               >
-                {/* Image Container with Hover Zoom */}
-                <div className="relative w-full aspect-4/3 mb-4 overflow-hidden bg-gray-100">
-                  <Image
-                    src={article.image}
-                    alt={article.title}
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                  />
-                </div>
+                <Link href={`/news/${article.slug}`}>
+                 <div className="relative w-full aspect-[4/3] mb-4 overflow-hidden bg-gray-100 rounded-lg">
+  {article.image_exists !== false ? (
+    <img
+      src={`/api/news-image/${article.id}?v=${article.version || 1}`}
+      alt={article.title}
+      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+      loading={index < 4 ? "eager" : "lazy"}
+      onError={(e) => {
+        // Hide image on error, show placeholder
+        (e.target as HTMLImageElement).style.display = 'none';
+        const parent = (e.target as HTMLImageElement).parentElement;
+        if (parent) {
+          parent.classList.add('bg-gray-100', 'flex', 'items-center', 'justify-center');
+          const placeholder = document.createElement('span');
+          placeholder.className = 'text-gray-400 text-sm';
+          placeholder.innerText = 'No image';
+          parent.appendChild(placeholder);
+        }
+      }}
+    />
+  ) : (
+    <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+      <span className="text-gray-400 text-sm">No image</span>
+    </div>
+  )}
+</div>
 
-                {/* Metadata */}
-                <div className="flex items-center flex-wrap gap-1.5 text-[11px] text-gray-500 mb-3 tracking-wide">
-                  <span className="uppercase">{article.category}</span>
-                  <span>|</span>
-                  <span>{article.date}</span>
-                </div>
+                  <div className="flex items-center flex-wrap gap-1.5 text-[11px] text-gray-500 mb-3 tracking-wide">
+                    <span className="uppercase">{article.category_label}</span>
+                    <span>|</span>
+                    <span>{article.formatted_date}</span>
+                    {article.source && (
+                      <>
+                        <span>|</span>
+                        <span>{article.source}</span>
+                      </>
+                    )}
+                  </div>
 
-                {/* Article Title */}
-                <h3 className="text-lg md:text-xl font-serif text-slate-800 leading-snug group-hover:text-teal-700 transition-colors">
-                  {article.title}
-                </h3>
+                  <h3 className="text-lg md:text-xl font-serif text-slate-800 leading-snug group-hover:text-teal-700 transition-colors line-clamp-3">
+                    {article.title}
+                  </h3>
+                </Link>
               </motion.div>
-            ))}
+            );
+          })}
         </div>
+
+        {/* Empty State */}
+        {articles.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-gray-500 text-lg">No articles found.</p>
+            <p className="text-gray-400 text-sm mt-2">Check back later for updates.</p>
+          </div>
+        )}
       </section>
     </main>
   );

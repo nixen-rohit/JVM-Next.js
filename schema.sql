@@ -163,3 +163,40 @@ CREATE TABLE IF NOT EXISTS project_downloads (
   FOREIGN KEY (file_id) REFERENCES project_files(id) ON DELETE CASCADE,
   INDEX idx_project_type (project_id, download_type)
 );
+
+
+-- news 
+CREATE TABLE IF NOT EXISTS news_articles (
+  id VARCHAR(36) PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) UNIQUE NOT NULL,
+  category ENUM('press_media', 'blog') NOT NULL,
+  content TEXT,
+  source VARCHAR(255),
+  published_date DATE NOT NULL,
+  is_published BOOLEAN DEFAULT TRUE,
+  sort_order INT DEFAULT 0,
+  view_count INT DEFAULT 0,
+  version INT DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_published_date (is_published, published_date DESC),
+  INDEX idx_category (category),
+  INDEX idx_sort (sort_order)
+);
+
+-- Create news_images table
+CREATE TABLE IF NOT EXISTS news_images (
+  id VARCHAR(36) PRIMARY KEY,
+  news_id VARCHAR(36) NOT NULL,
+  image_data MEDIUMBLOB NOT NULL,
+  mime_type VARCHAR(50) NOT NULL,
+  blur_data TEXT,
+  width INT,
+  height INT,
+  version INT DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (news_id) REFERENCES news_articles(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_news_id (news_id),
+  INDEX idx_news_id (news_id)
+);

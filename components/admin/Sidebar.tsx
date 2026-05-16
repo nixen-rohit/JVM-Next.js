@@ -5,23 +5,24 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { RiSlideshowView } from "react-icons/ri";
+
 import {
   BsGrid,
   BsKanban,
-  BsEnvelope,
- 
+  BsEnvelope, 
   BsChevronLeft,
   BsChevronRight,
-  BsGear,
   BsBoxArrowRight,
 } from "react-icons/bs";
+import { IoNewspaperOutline } from "react-icons/io5";
 
 const navItems = [
   { name: "Dashboard", href: "/admin", icon: BsGrid },
-  { name: "Sliders", href: "/admin/hero-slides", icon: BsGrid },
+  { name: "Sliders", href: "/admin/hero-slides", icon: RiSlideshowView },
   { name: "Projects", href: "/admin/projects", icon: BsKanban },
   { name: "Contacts", href: "/admin/contacts", icon: BsEnvelope },
-  
+  {name : "News" , href:"/admin/news" , icon:IoNewspaperOutline}
 ];
 
 export default function Sidebar() {
