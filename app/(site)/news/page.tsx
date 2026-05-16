@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
 import { FiChevronDown } from "react-icons/fi";
 import { useNews } from "@/hooks/useNews";
 
@@ -185,7 +184,7 @@ export default function News() {
           {articles.map((article: any, index: number) => {
             // ✅ Build image URL from blob endpoint
             const imageUrl = `/api/news-image/${article.id}?v=${article.version || 1}`;
-            
+
             return (
               <motion.div
                 key={article.id}
@@ -195,33 +194,40 @@ export default function News() {
                 transition={{ duration: 0.5, delay: (index % 4) * 0.1 }}
                 className="group cursor-pointer flex flex-col"
               >
-                <Link href={`/news/${article.slug}`}>
-                 <div className="relative w-full aspect-[4/3] mb-4 overflow-hidden bg-gray-100 rounded-lg">
-  {article.image_exists !== false ? (
-    <img
-      src={`/api/news-image/${article.id}?v=${article.version || 1}`}
-      alt={article.title}
-      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-      loading={index < 4 ? "eager" : "lazy"}
-      onError={(e) => {
-        // Hide image on error, show placeholder
-        (e.target as HTMLImageElement).style.display = 'none';
-        const parent = (e.target as HTMLImageElement).parentElement;
-        if (parent) {
-          parent.classList.add('bg-gray-100', 'flex', 'items-center', 'justify-center');
-          const placeholder = document.createElement('span');
-          placeholder.className = 'text-gray-400 text-sm';
-          placeholder.innerText = 'No image';
-          parent.appendChild(placeholder);
-        }
-      }}
-    />
-  ) : (
-    <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-      <span className="text-gray-400 text-sm">No image</span>
-    </div>
-  )}
-</div>
+                {/* <Link href={`/news/${article.slug}`}></Link> */}
+
+                  <div className="relative w-full aspect-4/3 mb-4 overflow-hidden bg-gray-100 rounded-lg">
+                    {article.image_exists !== false ? (
+                      <img
+                        src={`/api/news-image/${article.id}?v=${article.version || 1}`}
+                        alt={article.title}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        loading={index < 4 ? "eager" : "lazy"}
+                        onError={(e) => {
+                          // Hide image on error, show placeholder
+                          (e.target as HTMLImageElement).style.display = "none";
+                          const parent = (e.target as HTMLImageElement)
+                            .parentElement;
+                          if (parent) {
+                            parent.classList.add(
+                              "bg-gray-100",
+                              "flex",
+                              "items-center",
+                              "justify-center",
+                            );
+                            const placeholder = document.createElement("span");
+                            placeholder.className = "text-gray-400 text-sm";
+                            placeholder.innerText = "No image";
+                            parent.appendChild(placeholder);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                        <span className="text-gray-400 text-sm">No image</span>
+                      </div>
+                    )}
+                  </div>
 
                   <div className="flex items-center flex-wrap gap-1.5 text-[11px] text-gray-500 mb-3 tracking-wide">
                     <span className="uppercase">{article.category_label}</span>
@@ -238,7 +244,7 @@ export default function News() {
                   <h3 className="text-lg md:text-xl font-serif text-slate-800 leading-snug group-hover:text-teal-700 transition-colors line-clamp-3">
                     {article.title}
                   </h3>
-                </Link>
+                
               </motion.div>
             );
           })}
@@ -248,7 +254,9 @@ export default function News() {
         {articles.length === 0 && (
           <div className="text-center py-20">
             <p className="text-gray-500 text-lg">No articles found.</p>
-            <p className="text-gray-400 text-sm mt-2">Check back later for updates.</p>
+            <p className="text-gray-400 text-sm mt-2">
+              Check back later for updates.
+            </p>
           </div>
         )}
       </section>
