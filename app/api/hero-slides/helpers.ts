@@ -23,6 +23,7 @@ export interface SlideRow extends RowDataPacket {
   button2_variant: 'primary' | 'secondary';
   is_active: number;
   sort_order: number;
+    version: number;
   created_at: string;
   updated_at: string;
 }
@@ -41,6 +42,8 @@ export function base64ToBuffer(dataUrl: string): { buffer: Buffer; mimeType: str
     buffer: Buffer.from(matches[2], 'base64'),
   };
 }
+
+ 
 
 // Convert database row to API response
 export function rowToSlide(row: SlideRow): any {
@@ -97,3 +100,5 @@ export async function canDeleteSlide(slideId: string, isActive: boolean): Promis
   
   return { allowed: true };
 }
+
+

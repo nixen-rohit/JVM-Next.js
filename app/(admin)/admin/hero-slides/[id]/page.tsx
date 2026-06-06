@@ -507,6 +507,7 @@ export default function EditHeroSlide() {
       });
       return;
     }
+    // console.log("🟢 1. Starting save process");
 
     setIsSaving(true);
     setSaveError(null);
@@ -515,7 +516,7 @@ export default function EditHeroSlide() {
     try {
       // Validate button links and text before sending
       const normalized = normalizeSlide(slide);
-
+      // console.log("🟢 2. Sending API request...");
       for (const btn of normalized.buttons) {
         if (
           !btn.link ||
@@ -593,6 +594,8 @@ export default function EditHeroSlide() {
         body: JSON.stringify(payload),
       });
 
+      // console.log("🟢 3. Response received:", response.status);
+
       if (!response.ok) {
         const error = await response.json();
         console.error("API Error Response:", error);
@@ -600,6 +603,7 @@ export default function EditHeroSlide() {
       }
 
       const saved: Slide = await response.json();
+      // console.log("🟢 4. Saved slide:", saved.id);
 
       // Map response back to SlideConfig
       const savedConfig: SlideConfig = {
@@ -631,23 +635,31 @@ export default function EditHeroSlide() {
       setSlide(normalizeSlide(savedConfig));
       // After save success
       setSaveSuccess(true);
+      // console.log("🟢 5. State updated");
 
-      if (response.ok) {
-        // ✅ Dispatch event to refresh UI
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(
-            new CustomEvent("hero-slides-updated", {
-              detail: { timestamp: Date.now() },
-            }),
-          );
-        }
-
-        // Redirect
-        setTimeout(() => {
-          router.push("/admin/hero-slides");
-          router.refresh();
-        }, 1200);
+      // ✅ Dispatch event to refresh UI
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("hero-slides-updated", {
+            detail: { timestamp: Date.now() },
+          }),
+        );
       }
+
+      // console.log("🟢 6. Event dispatched");
+
+      // console.log("🟢 7. About to set isSaving to false and redirect");
+
+      // ✅ IMPORTANT: Set isSaving to false BEFORE redirect
+      setIsSaving(false);
+      // console.log("🟢 8. isSaving set to false");
+
+      // Redirect
+      setTimeout(() => {
+        // console.log("🟢 9. Executing redirect now");
+        router.push("/admin/hero-slides");
+        router.refresh();
+      }, 1200);
 
       console.log("Sending to API:", {
         method,

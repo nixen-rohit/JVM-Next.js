@@ -24,8 +24,7 @@ const SlideContent = memo(
 
     // Build image URLs with version for cache busting
     const desktopImageUrl = `/api/hero-slides/image/${slide.id}?device=desktop&v=${slide.version || 1}`;
-    const mobileImageUrl = `/api/hero-slides/image/${slide.id}?device=mobile&v=${slide.version || 1}`;
-
+const mobileImageUrl = `/api/hero-slides/image/${slide.id}?device=mobile&v=${slide.version || 1}`;
     return (
       <>
         {isFallback ? (
@@ -87,6 +86,8 @@ export default function HeroSlider() {
       prev >= displaySlides.length ? 0 : prev
     );
   }
+
+  console.log("SWR:", fetchedSlides);
 }, [fetchedSlides]);
 
   // Auto-advance slides
@@ -123,12 +124,12 @@ export default function HeroSlider() {
   const nextSlide = slides[nextIndex];
 
   const desktop = new Image();
-  desktop.src =
-    `/api/hero-slides/image/${nextSlide.id}?device=desktop&v=${nextSlide.version || 1}`;
+  desktop.src = `/api/hero-slides/image/${nextSlide.id}?device=desktop&v=${nextSlide.version || 1}`;
+
 
   const mobile = new Image();
-  mobile.src =
-    `/api/hero-slides/image/${nextSlide.id}?device=mobile&v=${nextSlide.version || 1}`;
+ mobile.src = `/api/hero-slides/image/${nextSlide.id}?device=mobile&v=${nextSlide.version || 1}`;
+
 }, [currentIndex, slides]);
 
   if (isLoading) {

@@ -103,7 +103,7 @@ async function processHeroImage(base64Data: string) {
 
 export async function handlePUT(request: NextRequest) {
   let connection;
-  let nextVersion = 1;
+  let nextVersion: number | null = null;
 
   try {
     const pool = getPool();
@@ -189,6 +189,14 @@ export async function handlePUT(request: NextRequest) {
           updates.buttons[0].variant,
         );
       }
+      if (updates.buttonCount === 1) {
+        updateFields.push(
+          "button2_text = NULL",
+          "button2_link = NULL",
+          "button2_variant = NULL",
+        );
+      }
+
       if (updates.buttonCount === 2 && updates.buttons[1]) {
         updateFields.push(
           "button2_text = ?, button2_link = ?, button2_variant = ?",
@@ -257,19 +265,17 @@ export async function handlePUT(request: NextRequest) {
           [id],
         );
 
-        // Get next version
-        const [versionResult] = await connection.query<any[]>(
-          `SELECT COALESCE(MAX(version), 0) + 1 as next_version 
-           FROM slide_images 
-           WHERE slide_id = ?`,
-          [id],
-        );
-        nextVersion = versionResult[0]?.next_version || 1;
+        const currentVersion = existing[0].version || 0;
+        nextVersion = currentVersion + 1;
 
-        // Insert new desktop image with processed WebP
+        console.log(
+          `📊 Current version: ${currentVersion}, nextVersion: ${nextVersion}`,
+        );
+
+        // Insert new desktop image
         await connection.query(
-          `INSERT INTO slide_images (id, slide_id, device_type, image_data, mime_type, version)
-           VALUES (?, ?, 'desktop', ?, ?, ?)`,
+          `INSERT INTO slide_images (id, slide_id, device_type, image_data, mime_type, version, is_active)
+   VALUES (?, ?, 'desktop', ?, ?, ?, TRUE)`,
           [
             randomUUID(),
             id,
@@ -279,10 +285,10 @@ export async function handlePUT(request: NextRequest) {
           ],
         );
 
-        // Insert new mobile image with processed WebP
+        // Insert new mobile image
         await connection.query(
-          `INSERT INTO slide_images (id, slide_id, device_type, image_data, mime_type, version)
-           VALUES (?, ?, 'mobile', ?, ?, ?)`,
+          `INSERT INTO slide_images (id, slide_id, device_type, image_data, mime_type, version, is_active)
+   VALUES (?, ?, 'mobile', ?, ?, ?, TRUE)`,
           [
             randomUUID(),
             id,
@@ -292,11 +298,12 @@ export async function handlePUT(request: NextRequest) {
           ],
         );
 
-        // Update slide version
-        await connection.query(`UPDATE slides SET version = ? WHERE id = ?`, [
-          nextVersion,
-          id,
-        ]);
+        const [updateResult] = await connection.query(
+          `UPDATE slides SET version = ? WHERE id = ?`,
+          [nextVersion, id],
+        );
+
+        console.log(`📊 Slides version update:`, updateResult);
 
         console.log(`✅ Images updated to version ${nextVersion}`);
       } catch (imgError) {
@@ -312,7 +319,9 @@ export async function handlePUT(request: NextRequest) {
     }
 
     await connection.commit();
-    console.log("✅ Slide updated successfully:", id);
+
+    connection.release();
+    connection = null;
 
     const [rows] = await pool.query<SlideRow[]>(
       "SELECT * FROM slides WHERE id = ? LIMIT 1",
@@ -320,9 +329,10 @@ export async function handlePUT(request: NextRequest) {
     );
 
     const slide = rowToSlide(rows[0]);
+
     return NextResponse.json({
       ...slide,
-      version: nextVersion,
+      version: nextVersion ?? slide.version,
     });
   } catch (error: any) {
     if (connection) await connection.rollback();

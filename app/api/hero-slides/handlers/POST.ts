@@ -162,28 +162,28 @@ export async function handlePOST(request: NextRequest) {
         const processed = await processHeroImage(validatedData.imageData);
 
         // Insert desktop image
-        await connection.query(
-          `INSERT INTO slide_images (id, slide_id, device_type, image_data, mime_type, version)
-           VALUES (?, ?, 'desktop', ?, ?, 1)`,
-          [
-            randomUUID(),
-            validatedData.id,
-            processed.desktopBuffer,
-            processed.mimeType,
-          ],
-        );
+await connection.query(
+  `INSERT INTO slide_images (id, slide_id, device_type, image_data, mime_type, version, is_active)
+   VALUES (?, ?, 'desktop', ?, ?, 1, TRUE)`,
+  [
+    randomUUID(),
+    validatedData.id,
+    processed.desktopBuffer,
+    processed.mimeType,
+  ],
+);
 
-        // Insert mobile image
-        await connection.query(
-          `INSERT INTO slide_images (id, slide_id, device_type, image_data, mime_type, version)
-           VALUES (?, ?, 'mobile', ?, ?, 1)`,
-          [
-            randomUUID(),
-            validatedData.id,
-            processed.mobileBuffer,
-            processed.mimeType,
-          ],
-        );
+// Insert mobile image
+await connection.query(
+  `INSERT INTO slide_images (id, slide_id, device_type, image_data, mime_type, version, is_active)
+   VALUES (?, ?, 'mobile', ?, ?, 1, TRUE)`,
+  [
+    randomUUID(),
+    validatedData.id,
+    processed.mobileBuffer,
+    processed.mimeType,
+  ],
+);
 
         console.log("✅ Images saved to slide_images table");
       } catch (imgError) {
