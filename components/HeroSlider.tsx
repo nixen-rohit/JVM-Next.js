@@ -72,22 +72,22 @@ export default function HeroSlider() {
   const previousSlidesRef = useRef<string>("");  
 
   // Update slides when fetched data changes - FIXED infinite loop
-  useEffect(() => {
-    const displaySlides = getDisplaySlides(fetchedSlides || []);
+ useEffect(() => {
+  const displaySlides = getDisplaySlides(fetchedSlides || []);
 
-    // Compare by JSON string to prevent infinite updates
-    const slidesKey = JSON.stringify(displaySlides.map((s) => s.id));
+  const slidesKey = displaySlides
+  .map((s) => s.id)
+  .join("|");
 
-    if (previousSlidesRef.current !== slidesKey) {
-      previousSlidesRef.current = slidesKey;
-      setSlides(displaySlides);
+  if (previousSlidesRef.current !== slidesKey) {
+    previousSlidesRef.current = slidesKey;
+    setSlides(displaySlides);
 
-      // Reset index if slides change and current index is out of bounds
-      if (displaySlides.length > 0 && currentIndex >= displaySlides.length) {
-        setCurrentIndex(0);
-      }
-    }
-  }, [fetchedSlides, currentIndex]); // currentIndex is needed but won't cause infinite loop now
+    setCurrentIndex(prev =>
+      prev >= displaySlides.length ? 0 : prev
+    );
+  }
+}, [fetchedSlides]);
 
   // Auto-advance slides
   useEffect(() => {
@@ -114,6 +114,22 @@ export default function HeroSlider() {
       window.removeEventListener('hero-slides-updated', handleSlidesUpdate);
     };
   }, [refreshSlides]);
+
+
+  useEffect(() => {
+  if (slides.length <= 1) return;
+
+  const nextIndex = (currentIndex + 1) % slides.length;
+  const nextSlide = slides[nextIndex];
+
+  const desktop = new Image();
+  desktop.src =
+    `/api/hero-slides/image/${nextSlide.id}?device=desktop&v=${nextSlide.version || 1}`;
+
+  const mobile = new Image();
+  mobile.src =
+    `/api/hero-slides/image/${nextSlide.id}?device=mobile&v=${nextSlide.version || 1}`;
+}, [currentIndex, slides]);
 
   if (isLoading) {
     return (
